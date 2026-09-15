@@ -1,0 +1,20 @@
+name: pins
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+jobs:
+  # EVERY RELEASE THE DECLARED RANGES CLAIM, not just the one the resolver picks.
+  # A range is a claim about every version in it, and a suite that only ever sees
+  # the resolver's choice has tested one of them.
+  range-sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e . virtualenv
+      - run: python battery/probe_pin.py --sweep

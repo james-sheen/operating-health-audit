@@ -1,0 +1,227 @@
+{
+ "format": "operating-health-audit/capture/1",
+ "captured_at": "2026-09-15T00:00:00Z",
+ "source": "acme-operating-review",
+ "complete": true,
+ "errors": [],
+ "units": [
+  {
+   "name": "div-commercial",
+   "type": "Division",
+   "path": "acme-operating-review#div-commercial",
+   "values": {
+    "total_revenue_m": 45.2,
+    "total_headcount": 820.0,
+    "operating_margin_pct": 8.5
+   },
+   "state": "declining",
+   "edges": {
+    "reports_to": "dept-sales"
+   },
+   "enabled": true
+  },
+  {
+   "name": "div-operations",
+   "type": "Division",
+   "path": "acme-operating-review#div-operations",
+   "values": {
+    "total_revenue_m": 22.1,
+    "total_headcount": 340.0,
+    "operating_margin_pct": 14.2
+   },
+   "state": "healthy",
+   "edges": {
+    "reports_to": "dept-engineering"
+   },
+   "enabled": true
+  },
+  {
+   "name": "dept-sales",
+   "type": "Department",
+   "path": "acme-operating-review#dept-sales",
+   "values": {
+    "headcount": 180.0,
+    "turnover_pct": 28.0,
+    "revenue_m": 18.5,
+    "cost_m": 16.2,
+    "margin_pct": 12.4,
+    "satisfaction_score": 3.2
+   },
+   "state": "declining",
+   "edges": {
+    "reports_to": "div-commercial"
+   },
+   "enabled": true
+  },
+  {
+   "name": "dept-marketing",
+   "type": "Department",
+   "path": "acme-operating-review#dept-marketing",
+   "values": {
+    "headcount": 65.0,
+    "turnover_pct": 22.0,
+    "revenue_m": 8.3,
+    "cost_m": 9.1,
+    "margin_pct": -9.6,
+    "satisfaction_score": 4.1
+   },
+   "state": "restructuring",
+   "edges": {
+    "reports_to": "div-commercial"
+   },
+   "enabled": true
+  },
+  {
+   "name": "dept-engineering",
+   "type": "Department",
+   "path": "acme-operating-review#dept-engineering",
+   "values": {
+    "headcount": 210.0,
+    "turnover_pct": 8.0,
+    "revenue_m": 0.0,
+    "cost_m": 14.5,
+    "satisfaction_score": 7.8
+   },
+   "state": "healthy",
+   "edges": {
+    "reports_to": "div-operations"
+   },
+   "enabled": true
+  },
+  {
+   "name": "dept-support",
+   "type": "Department",
+   "path": "acme-operating-review#dept-support",
+   "values": {
+    "headcount": 95.0,
+    "turnover_pct": 31.0,
+    "revenue_m": 0.0,
+    "cost_m": 4.8,
+    "satisfaction_score": 2.9
+   },
+   "state": "critical",
+   "edges": {
+    "reports_to": "div-operations"
+   },
+   "enabled": true
+  },
+  {
+   "name": "exec-cro",
+   "type": "Executive",
+   "path": "acme-operating-review#exec-cro",
+   "values": {
+    "tenure_years": 14.0,
+    "direct_reports": 22.0,
+    "performance_rating": 6.2
+   },
+   "state": null,
+   "edges": {
+    "leads": "dept-sales"
+   },
+   "enabled": true
+  },
+  {
+   "name": "exec-cmo",
+   "type": "Executive",
+   "path": "acme-operating-review#exec-cmo",
+   "values": {
+    "tenure_years": 2.0,
+    "direct_reports": 8.0,
+    "performance_rating": 4.5
+   },
+   "state": null,
+   "edges": {
+    "leads": "dept-marketing"
+   },
+   "enabled": true
+  },
+  {
+   "name": "exec-vp-sales",
+   "type": "Executive",
+   "path": "acme-operating-review#exec-vp-sales",
+   "values": {
+    "tenure_years": 6.0,
+    "direct_reports": 18.0,
+    "performance_rating": 5.1
+   },
+   "state": null,
+   "edges": {
+    "leads": "dept-sales"
+   },
+   "enabled": true
+  },
+  {
+   "name": "proj-crm",
+   "type": "Project",
+   "path": "acme-operating-review#proj-crm",
+   "values": {
+    "budget_m": 2.5,
+    "spent_m": 3.8,
+    "completion_pct": 45.0
+   },
+   "state": "at_risk",
+   "edges": {
+    "funds": "div-commercial"
+   },
+   "enabled": true
+  },
+  {
+   "name": "proj-rebrand",
+   "type": "Project",
+   "path": "acme-operating-review#proj-rebrand",
+   "values": {
+    "budget_m": 0.8,
+    "spent_m": 0.5,
+    "completion_pct": 70.0
+   },
+   "state": "on_track",
+   "edges": {
+    "funds": "div-commercial"
+   },
+   "enabled": true
+  },
+  {
+   "name": "proj-expansion",
+   "type": "Project",
+   "path": "acme-operating-review#proj-expansion",
+   "values": {
+    "budget_m": 5.0,
+    "spent_m": 6.2,
+    "completion_pct": 30.0
+   },
+   "state": "delayed",
+   "edges": {
+    "funds": "div-operations"
+   },
+   "enabled": true
+  },
+  {
+   "name": "proc-sales-cycle",
+   "type": "Process",
+   "path": "acme-operating-review#proc-sales-cycle",
+   "values": {
+    "cycle_time_days": 42.0,
+    "error_rate_pct": 8.5
+   },
+   "state": null,
+   "edges": {
+    "depends_on": "dept-sales"
+   },
+   "enabled": true
+  },
+  {
+   "name": "proc-onboarding",
+   "type": "Process",
+   "path": "acme-operating-review#proc-onboarding",
+   "values": {
+    "cycle_time_days": 28.0,
+    "error_rate_pct": 12.3
+   },
+   "state": null,
+   "edges": {
+    "depends_on": "dept-support"
+   },
+   "enabled": true
+  }
+ ]
+}

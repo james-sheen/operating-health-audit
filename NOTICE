@@ -1,0 +1,31 @@
+operating-health-audit
+Copyright 2026 The Arbiter Project Authors
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied.
+
+NO REDISTRIBUTED THIRD-PARTY CONTENT
+
+The unit list in `examples/` is derived from a synthetic case study carried in
+the authors' own private tree. No number here is a fact about a real
+organisation, no person named is a real person, and the reporting lines are
+invented in full -- the source carried none, which is the first thing this
+audit reports about it.
+
+`battery/make_series.py` generates capture series and they are not committed.
+They exist to measure where each axiom arm starts answering, which is a fact
+about the engine; a finding produced by a generated series is never evidence
+about an organisation, and `docs/burn-in.md` says so where the numbers are.
+
+DEPENDENCIES, SEPARATELY LICENSED
+
+Stage 1 depends on `presence-audit`. Stage 2 additionally depends on
+`arbiter-engine`. Both are separately licensed under the same terms. This is a
+consumer of them and not a part of either.

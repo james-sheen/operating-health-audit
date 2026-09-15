@@ -1,0 +1,268 @@
+# THE STAGE 2 MODEL. EVERY NUMBER IN IT IS INVENTED except the axiom floors, and
+# it says so here rather than in a footnote: there is no client and no operating
+# review behind these figures. A real engagement transcribes its own, from its
+# own published targets, and `guards/` is what checks the transcription survived.
+#
+# The subject is an operating model: the divisions, departments, executives,
+# projects and processes an organisation says it runs, and the few quantities it
+# reports about them. Derived from the `consulting` domain the Core was tested
+# with, and it differs from that domain in four places, all measured.
+#
+# ------------------------------------------------------- what can answer at all
+#
+# MEASURED against arbiter-engine 0.1.14, by reading `types.AXIOM_MINIMUMS` in the
+# installed package rather than the guide:
+#
+#     CONNECTIVITY  1     CONSISTENCY  1     CONSERVATION  1
+#     MONOTONICITY  3     BOUNDEDNESS  5     STABILITY    10
+#     RESPONSIVENESS 20   HOMEOSTASIS  30
+#
+# THOSE FLOORS DO NOT MEAN WHAT READING THEM SUGGESTS, and this comment said the
+# wrong thing until the model was run. It read: every one of the source domain's
+# thirty declarations would decline `insufficient_samples` from a single
+# snapshot. MEASURED on the shipped case study, one capture of fourteen units
+# produces SEVEN findings -- four critical, three warning -- because BOUNDEDNESS
+# evaluates a declared `warning:`/`critical:` against the CURRENT value, and the
+# sample floor governs the arm that needs a history rather than the whole axiom.
+# 103 invariants were checked and 54 declined `insufficient_samples`, not 103.
+#
+# The lesson is the one this family keeps relearning: a constant read out of a
+# package is not a behaviour, and the run is the only thing that settles which.
+#
+# What the floors DO mean is that the arms needing history -- HOMEOSTASIS's
+# baseline, STABILITY's transitions, MONOTONICITY's direction -- stay silent
+# until the captures accumulate. `docs/burn-in.md` carries that arithmetic.
+#
+# The structural decision stands and is worth more than it looked: this model
+# declares CONNECTIVITY over the org structure, which answers from ONE capture.
+# THE SOURCE DOMAIN DECLARED FIVE RELATIONSHIP TYPES AND CHECKED NONE OF THEM --
+# `REPORTS_TO`, `OWNS`, `LEADS`, `DEPENDS_ON`, `FUNDS` were all declared and no
+# indicator referenced any. A relationship type nothing checks is a comment.
+#
+# THE NUMERIC ARMS ARE A DECLARED BURN-IN, NOT A GAP. At a monthly reporting
+# cadence HOMEOSTASIS needs 30 captures -- two and a half years. `docs/burn-in.md`
+# carries the arithmetic and the kill criterion. They are declared anyway, because
+# a model that omits them would silently stop being an operating review; what is
+# NOT done is inventing a cadence that makes the floors look reachable.
+#
+# THE WINDOW IS A CEILING AND IT DEFAULTS TO ONE HOUR. Undeclared, a series
+# captured monthly is ONE observation however long it runs: everything older
+# than an hour falls outside. Measured -- 36 monthly captures produced exactly
+# the declines of a single snapshot until `window:` was declared.
+#
+# AND IT MUST SPAN THE SERIES, NOT THE FLOOR. Sized at floor x cadence -- 3
+# samples x 30 days for MONOTONICITY -- the arms still declined, because the
+# span of a longer series then exceeds the window and the history goes stale.
+# So it is declared at ten years on every history arm: a ceiling generous enough
+# for any engagement, which is the honest shape for a number whose only job is
+# to not exclude what you fed. Measured: at 3650d, 18 findings; sized to the
+# floors, 12.
+
+# A ROLE IS DECLARED OR IT IS NOTHING. The engine removed name inference: with no
+# `role:` a RESPONSIVENESS or CONSISTENCY indicator declines `missing_role`, and
+# the ABSENCE of that decline was never evidence a role was supplied. The four
+# the engine accepts are `latency`, `count`, `percentage`, `ratio`.
+#
+# AND THE SOURCE DOMAIN PUT RESPONSIVENESS ON THE WRONG INDICATOR. It declared it
+# on `throughput`, which is a rate; RESPONSIVENESS is role-gated to `latency`
+# alone, so that pair evaluates nothing whatever the sample count. The latency in
+# this domain is `cycle_time_days`, and that is where it is declared here.
+
+domain:
+  id: operating-health-audit
+  name: Operating model health
+  description: >-
+    The operating units a target operating model declares, the reporting lines
+    between them, and the quantities an operating review reports about them.
+    Invented in full.
+
+  entity_types: [Division, Department, Executive, Project, Process]
+  relationship_types: [reports_to, owns, leads, depends_on, funds]
+
+  indicators:
+
+    Division:
+      # ANSWERS FROM ONE CAPTURE. A division with no department reporting into it
+      # is either dissolved or mis-exported, and either is worth a finding.
+      - name: reports_to
+        type: RELATIONSHIP
+        axioms: [CONNECTIVITY]
+        target_type: Department
+        relation_type: reports_to
+        min_cardinality: 1
+        violation_severity: HIGH
+      - name: total_revenue_m
+        type: NUMERIC
+        axioms: [MONOTONICITY, BOUNDEDNESS]
+        window: 3650d
+        role: count
+      - name: total_headcount
+        type: NUMERIC
+        axioms: [BOUNDEDNESS]
+        window: 3650d
+        role: count
+      - name: operating_margin_pct
+        type: NUMERIC
+        axioms: [HOMEOSTASIS]
+        window: 3650d
+        role: percentage
+      - name: status
+        type: STATE
+        axioms: [STABILITY]
+        window: 3650d
+        normal: [healthy, growing]
+        transient: [restructuring]
+        bad: [declining, critical]
+
+    Department:
+      - name: reports_to
+        type: RELATIONSHIP
+        axioms: [CONNECTIVITY]
+        target_type: Division
+        relation_type: reports_to
+        min_cardinality: 1
+        violation_severity: HIGH
+      - name: headcount
+        type: NUMERIC
+        axioms: [HOMEOSTASIS]
+        window: 3650d
+        role: count
+      # The one pair of published bounds this domain actually has. A target
+      # operating model that names a turnover ceiling is naming it as an UPPER
+      # bound, and the engine fires AT a declared number as well as past it --
+      # so 25 is reported, which is what `critical: 25` is supposed to mean.
+      - name: turnover_pct
+        type: NUMERIC
+        axioms: [BOUNDEDNESS, HOMEOSTASIS]
+        window: 3650d
+        role: percentage
+        warning: 15
+        critical: 25
+      - name: revenue_m
+        type: NUMERIC
+        axioms: [MONOTONICITY, BOUNDEDNESS]
+        window: 3650d
+        role: count
+      - name: cost_m
+        type: NUMERIC
+        axioms: [BOUNDEDNESS]
+        window: 3650d
+        role: count
+      - name: margin_pct
+        type: NUMERIC
+        axioms: [HOMEOSTASIS]
+        window: 3650d
+        role: percentage
+      - name: satisfaction_score
+        type: NUMERIC
+        axioms: [HOMEOSTASIS, STABILITY]
+        window: 3650d
+        role: ratio
+      - name: status
+        type: STATE
+        axioms: [STABILITY]
+        window: 3650d
+        normal: [healthy, growing]
+        transient: [restructuring]
+        bad: [declining, critical]
+
+    Executive:
+      # ANSWERS FROM ONE CAPTURE, and it is the finding an operating review is
+      # most often actually asked for: a named executive leading nothing.
+      - name: leads
+        type: RELATIONSHIP
+        axioms: [CONNECTIVITY]
+        target_type: Department
+        relation_type: leads
+        min_cardinality: 1
+        violation_severity: HIGH
+      - name: tenure_years
+        type: NUMERIC
+        axioms: [MONOTONICITY]
+        window: 3650d
+        role: count
+        plausible_range: [0, 50]
+      - name: direct_reports
+        type: NUMERIC
+        axioms: [BOUNDEDNESS]
+        window: 3650d
+        role: count
+        warning: 12
+        critical: 20
+        plausible_range: [0, 200]
+      - name: performance_rating
+        type: NUMERIC
+        axioms: [HOMEOSTASIS, STABILITY]
+        window: 3650d
+        role: ratio
+        plausible_range: [0, 5]
+
+    Project:
+      - name: funds
+        type: RELATIONSHIP
+        axioms: [CONNECTIVITY]
+        target_type: Division
+        relation_type: funds
+        min_cardinality: 1
+        violation_severity: MEDIUM
+      - name: budget_m
+        type: NUMERIC
+        axioms: [BOUNDEDNESS]
+        window: 3650d
+        role: count
+      - name: spent_m
+        type: NUMERIC
+        axioms: [BOUNDEDNESS, MONOTONICITY]
+        window: 3650d
+        role: count
+      - name: completion_pct
+        type: NUMERIC
+        axioms: [MONOTONICITY]
+        window: 3650d
+        role: percentage
+      - name: status
+        type: STATE
+        axioms: [STABILITY]
+        window: 3650d
+        normal: [on_track, completed]
+        transient: [at_risk]
+        bad: [over_budget, delayed, cancelled]
+
+    Process:
+      - name: depends_on
+        type: RELATIONSHIP
+        axioms: [CONNECTIVITY]
+        target_type: Department
+        relation_type: depends_on
+        min_cardinality: 1
+        violation_severity: MEDIUM
+      # RESPONSIVENESS lives HERE and not on throughput. Role-gated to `latency`,
+      # and a cycle time is the only latency this domain reports.
+      - name: cycle_time_days
+        type: NUMERIC
+        axioms: [BOUNDEDNESS, HOMEOSTASIS, RESPONSIVENESS]
+        window: 3650d
+        role: latency
+      - name: error_rate_pct
+        type: NUMERIC
+        axioms: [BOUNDEDNESS]
+        window: 3650d
+        role: percentage
+        warning: 5
+        critical: 10
+      # NOT IN THE SHIPPED CASE STUDY'S EXPORT. Neither this nor
+      # `automation_pct` has a column in it, so both decline
+      # `missing_property` there. Declared anyway: they are indicators an
+      # operating review asks for, and the decline says truthfully that
+      # this export could not answer them. Dropping them would make the
+      # model agree with one exporter instead of with the domain.
+      - name: throughput
+        type: NUMERIC
+        axioms: [BOUNDEDNESS]
+        window: 3650d
+        role: count
+      - name: automation_pct
+        type: NUMERIC
+        axioms: [MONOTONICITY]
+        window: 3650d
+        role: percentage

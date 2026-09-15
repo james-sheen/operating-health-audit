@@ -1,0 +1,136 @@
+{
+ "format": "operating-health-audit/declaration/1",
+ "reviewed_by": "the operating-health-audit authors",
+ "reviewed_on": "2026-09-15",
+ "sources": [
+  "acme-operating-review (synthetic; unit list from the case study named in NOTICE, reporting lines invented for this fixture)"
+ ],
+ "units": [
+  {
+   "name": "div-commercial",
+   "type": "Division",
+   "display_name": "Commercial Division",
+   "source": "acme-operating-review#div-commercial",
+   "edges": {
+    "reports_to": "dept-sales"
+   }
+  },
+  {
+   "name": "div-operations",
+   "type": "Division",
+   "display_name": "Operations Division",
+   "source": "acme-operating-review#div-operations",
+   "edges": {
+    "reports_to": "dept-engineering"
+   }
+  },
+  {
+   "name": "dept-sales",
+   "type": "Department",
+   "display_name": "Sales Department",
+   "source": "acme-operating-review#dept-sales",
+   "edges": {
+    "reports_to": "div-commercial"
+   }
+  },
+  {
+   "name": "dept-marketing",
+   "type": "Department",
+   "display_name": "Marketing Department",
+   "source": "acme-operating-review#dept-marketing",
+   "edges": {
+    "reports_to": "div-commercial"
+   }
+  },
+  {
+   "name": "dept-engineering",
+   "type": "Department",
+   "display_name": "Engineering Department",
+   "source": "acme-operating-review#dept-engineering",
+   "edges": {
+    "reports_to": "div-operations"
+   }
+  },
+  {
+   "name": "dept-support",
+   "type": "Department",
+   "display_name": "Customer Support",
+   "source": "acme-operating-review#dept-support",
+   "edges": {
+    "reports_to": "div-operations"
+   }
+  },
+  {
+   "name": "exec-cro",
+   "type": "Executive",
+   "display_name": "Sarah Chen (CRO)",
+   "source": "acme-operating-review#exec-cro",
+   "edges": {
+    "leads": "dept-sales"
+   }
+  },
+  {
+   "name": "exec-cmo",
+   "type": "Executive",
+   "display_name": "James Park (CMO)",
+   "source": "acme-operating-review#exec-cmo",
+   "edges": {
+    "leads": "dept-marketing"
+   }
+  },
+  {
+   "name": "exec-vp-sales",
+   "type": "Executive",
+   "display_name": "Mike Torres (VP Sales)",
+   "source": "acme-operating-review#exec-vp-sales",
+   "edges": {
+    "leads": "dept-sales"
+   }
+  },
+  {
+   "name": "proj-crm",
+   "type": "Project",
+   "display_name": "CRM Migration",
+   "source": "acme-operating-review#proj-crm",
+   "edges": {
+    "funds": "div-commercial"
+   }
+  },
+  {
+   "name": "proj-rebrand",
+   "type": "Project",
+   "display_name": "Brand Refresh",
+   "source": "acme-operating-review#proj-rebrand",
+   "edges": {
+    "funds": "div-commercial"
+   }
+  },
+  {
+   "name": "proj-expansion",
+   "type": "Project",
+   "display_name": "APAC Expansion",
+   "source": "acme-operating-review#proj-expansion",
+   "edges": {
+    "funds": "div-operations"
+   }
+  },
+  {
+   "name": "proc-sales-cycle",
+   "type": "Process",
+   "display_name": "Sales Pipeline",
+   "source": "acme-operating-review#proc-sales-cycle",
+   "edges": {
+    "depends_on": "dept-sales"
+   }
+  },
+  {
+   "name": "proc-onboarding",
+   "type": "Process",
+   "display_name": "Employee Onboarding",
+   "source": "acme-operating-review#proc-onboarding",
+   "edges": {
+    "depends_on": "dept-support"
+   }
+  }
+ ]
+}
