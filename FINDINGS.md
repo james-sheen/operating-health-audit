@@ -1,8 +1,9 @@
 # Findings
 
 What building this vertical found, in the two upstreams and in itself. Each was
-produced by RUNNING something; none came from reading code, and two of them
-contradicted what reading had already concluded.
+produced by RUNNING something; none came from reading code, and three of them
+contradicted what reading had already concluded: F2, F7, and the claim withdrawn
+at the end.
 
 ## In `arbiter-engine` 0.1.14
 
@@ -25,13 +26,29 @@ organisation**. A gap in a feeder looks exactly like a quiet organisation.
 *Worked around* in `feeder._add_state_series`, which writes to the public
 `session.history`. When a state feeder lands, that function goes.
 
-**F2. HOMEOSTASIS cannot be reached at any cadence slower than weekly.** It
-reads `homeostasis_baseline_days`, fixed at 7, and ignores the indicator's
-`window:` — 21 declines at 1 capture and 21 at 30, at every window tried.
-Nothing reachable closes it: **`axiom_parameters` is not read by the published
-engine at all**, and `set_threshold_override` reaches HOMEOSTASIS's z-scores and
-not its baseline window, per the engine's own `OVERRIDE_CONSULTED_BY`. A monthly
-operating review therefore gets no baseline-deviation answer.
+**F2. HOMEOSTASIS answers nothing at a monthly cadence through the documented
+entry point.** It reads `homeostasis_baseline_days`, defaulted to 7, and ignores
+the indicator's `window:` — 21 declines at 1 capture and 21 at 30, at every
+window tried. At a monthly cadence the baseline admits about one sample, so the
+decline is `insufficient_samples` whatever the data does.
+
+*This finding once read that nothing reachable closes it. That was wrong.*
+`UnifiedAxiomReasoner(params=AxiomParameters(homeostasis_baseline_days=2000))`
+is public, is re-exported from `arbiter_engine.api`, and measured on 0.1.14 it
+works: a steady series comes back clean, and a margin falling from 11% to 2%
+over five monthly captures comes back `homeostasis_warning`. Two routes were
+checked and neither is the way in — `axiom_parameters` occurs once in the
+published package, inside a docstring, so no domain file can set it, and
+`set_threshold_override` reaches the z-scores and not the baseline window, per
+the engine's own `OVERRIDE_CONSULTED_BY`. From those two the finding concluded
+there was no route at all.
+
+What is genuinely unreachable is narrower. `EngineSession.__init__` takes no
+arguments and `load_model` constructs `UnifiedAxiomReasoner()` with none, so
+reaching the parameter means rebuilding the reasoner and replacing
+`session.reasoner`. **That is F1 again** — the session dropping a capability the
+layer beneath it has, a state series there and an `AxiomParameters` here, each
+with a working back door. One upstream ask, not two.
 
 **F3. The window defaults to one hour and is a ceiling, and nothing says so at
 the point of use.** Undeclared, 36 monthly captures produce byte-identical
@@ -91,3 +108,9 @@ The constant was real and the conclusion drawn from it was not. It is recorded
 here rather than quietly corrected because the shape recurs: a number read out
 of a package is not a behaviour, and the run is the only thing that settles
 which.
+
+**It recurred, in F2 above.** `homeostasis_baseline_days: int = 7` and
+`OVERRIDE_CONSULTED_BY` were both read correctly, and the conclusion drawn from
+them — that no route reached the baseline — was refuted by a three-line run. The
+first instance read a constant and inferred a behaviour; this one enumerated two
+routes and inferred the absence of a third. Enumerating is still reading.
