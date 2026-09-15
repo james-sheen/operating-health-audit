@@ -81,8 +81,9 @@ def _add_state_series(session: Any, entity: str, indicator: str,
 
     This writes to `session.history` directly, which is public and is how the
     engine's own docstrings describe reaching an input kind whose feeder is
-    missing. Filed upstream rather than left as a local trick; when a state
-    feeder lands, this function goes and the call above becomes unconditional.
+    missing. Filed upstream as james-sheen/arbiter#14 rather than left as a
+    local trick; when a state feeder lands, this function goes and the call
+    above becomes unconditional.
     """
     from datetime import timedelta
 

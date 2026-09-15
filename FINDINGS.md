@@ -7,6 +7,11 @@ at the end.
 
 ## In `arbiter-engine` 0.1.14
 
+**F1 and F2 are one ask and are filed as one**, at
+[james-sheen/arbiter#14](https://github.com/james-sheen/arbiter/issues/14) —
+both are the session dropping a capability the layer beneath it has. F3 is
+not filed.
+
 **F1. The session cannot feed a state series, and the engine reads one.**
 `EngineSession.add_observations` casts every sample with `float(value)`, so a
 state raises `ValueError`. `InMemoryObservationHistory.add` takes `value: Any`
