@@ -14,10 +14,18 @@ CONDITIONS OF ANY KIND, either express or implied.
 NO REDISTRIBUTED THIRD-PARTY CONTENT
 
 The unit list in `examples/` is derived from a synthetic case study carried in
-the authors' own private tree. No number here is a fact about a real
-organisation, no person named is a real person, and the reporting lines are
-invented in full -- the source carried none, which is the first thing this
-audit reports about it.
+the authors' own private tree -- a fictional organisational-health report
+authored on 2026-04-14 as a fixture for a document-extraction pipeline, whose
+figures have no real-world referent. No number here is a fact about a real
+organisation and the reporting lines are invented in full: the source carried
+none, which is the first thing this audit reports about it.
+
+NO PERSON IS NAMED. Officers appear by ROLE. The fixture's own executive labels
+carried person-shaped names, and although they were synthetic, a common name
+published beside a performance rating and an adverse finding reads as a record
+about somebody whether or not it is one. Nothing in the audit keys on those
+labels -- it matches on the unit identifier -- so the names cost nothing to
+remove and are not here.
 
 `battery/make_series.py` generates capture series and they are not committed.
 They exist to measure where each axiom arm starts answering, which is a fact

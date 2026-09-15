@@ -63,7 +63,7 @@
   {
    "name": "exec-cro",
    "type": "Executive",
-   "display_name": "Sarah Chen (CRO)",
+   "display_name": "Chief Revenue Officer",
    "source": "acme-operating-review#exec-cro",
    "edges": {
     "leads": "dept-sales"
@@ -72,7 +72,7 @@
   {
    "name": "exec-cmo",
    "type": "Executive",
-   "display_name": "James Park (CMO)",
+   "display_name": "Chief Marketing Officer",
    "source": "acme-operating-review#exec-cmo",
    "edges": {
     "leads": "dept-marketing"
@@ -81,7 +81,7 @@
   {
    "name": "exec-vp-sales",
    "type": "Executive",
-   "display_name": "Mike Torres (VP Sales)",
+   "display_name": "VP Sales",
    "source": "acme-operating-review#exec-vp-sales",
    "edges": {
     "leads": "dept-sales"
