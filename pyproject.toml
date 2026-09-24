@@ -30,7 +30,15 @@ dependencies = ["presence-audit>=0.1.8,<0.2"]
 # Floor is 0.1.14 and it was MEASURED, not chosen: this package reads
 # `partially_checked`, which the engine's NotEvaluatedReason gained at 0.1.14.
 # `battery/probe_pin.py` installs each in-range release and runs detect against it.
-detect = ["arbiter-engine>=0.1.14,<0.2"]
+#
+# THE CEILING MOVED TO 0.2 ON A MEASUREMENT, 2026-09-24. `<0.2` had held since
+# the engine's 0.1 line and was never re-derived against a 0.2 release, so it
+# was a claim about a boundary nobody had crossed. Measured on 0.2.4: 128 passed, the same figure as 0.1.18.
+# The floor is raised with it rather than left low: a range is a claim about
+# every release inside it, and the releases between the old floor and this one were not
+# re-run when the ceiling moved. `partially_checked` is still the reason the
+# floor cannot go below 0.1.14.
+detect = ["arbiter-engine>=0.2.4,<0.3"]
 
 [project.urls]
 Homepage = "https://github.com/james-sheen/operating-health-audit"
