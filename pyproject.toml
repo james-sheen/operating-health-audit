@@ -24,7 +24,7 @@ classifiers = [
 
 # Stage 1 is the shared core and nothing else. The engine is Stage 2 and is an
 # extra, because a presence audit answers without it and says so.
-dependencies = ["presence-audit>=0.1.8,<0.2"]
+dependencies = ["presence-audit>=0.1.9,<0.2"]
 
 [project.optional-dependencies]
 # Floor is 0.1.14 and it was MEASURED, not chosen: this package reads
