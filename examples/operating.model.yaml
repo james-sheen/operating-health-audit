@@ -79,6 +79,16 @@ domain:
   entity_types: [Division, Department, Executive, Project, Process]
   relationship_types: [reports_to, owns, leads, depends_on, funds]
 
+  # THE BASELINE HOLDS THE SERIES, as the windows below do. HOMEOSTASIS builds
+  # its baseline from the last `homeostasis_baseline_days` of history, seven by
+  # default -- about one monthly capture -- so until engine 0.2.11 read this
+  # block it declined `insufficient_samples` at thirty-six captures exactly as
+  # at one (FINDINGS F2). Declared at the windows' ten years for the windows'
+  # reason: a ceiling whose only job is to not exclude what was fed. Its own
+  # thirty-sample floor still stands, so it answers from the thirtieth capture.
+  axiom_parameters:
+    homeostasis_baseline_days: 3650
+
   indicators:
 
     Division:

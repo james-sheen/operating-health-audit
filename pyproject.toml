@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "operating-health-audit"
-version = "0.1.0"
+version = "0.1.1"
 description = "Of the operating units a target operating model declares, which are present and reporting, which are absent, and which appeared undeclared."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -38,7 +38,13 @@ dependencies = ["presence-audit>=0.1.9,<0.2"]
 # every release inside it, and the releases between the old floor and this one were not
 # re-run when the ceiling moved. `partially_checked` is still the reason the
 # floor cannot go below 0.1.14.
-detect = ["arbiter-engine>=0.2.4,<0.3"]
+#
+# THE FLOOR IS 0.2.11, AND FORCED BY A FAILING CONTROL. The feeder now sends a
+# unit's state through `add_observations`, which 0.2.10 and earlier cast to a
+# number -- measured, the first `status` raises ValueError there -- and the model
+# declares `axiom_parameters:`, which 0.2.10 and earlier read as nothing. Both
+# were FINDINGS F1 and F2, filed upstream as issue #14 and closed by 0.2.11.
+detect = ["arbiter-engine>=0.2.11,<0.3"]
 
 [project.urls]
 Homepage = "https://github.com/james-sheen/operating-health-audit"

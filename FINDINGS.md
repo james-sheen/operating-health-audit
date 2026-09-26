@@ -10,7 +10,9 @@ at the end.
 **F1 and F2 are one ask and are filed as one**, at
 [james-sheen/arbiter#14](https://github.com/james-sheen/arbiter/issues/14) —
 both are the session dropping a capability the layer beneath it has. F3 is
-not filed.
+not filed. **Both closed upstream in `arbiter-engine` 0.2.11**, which is this
+package's engine floor from its 0.1.1; each finding below says how, and the
+measurement it was filed on stays as it was.
 
 **F1. The session cannot feed a state series, and the engine reads one.**
 `EngineSession.add_observations` casts every sample with `float(value)`, so a
@@ -28,8 +30,10 @@ all. Feeding state directly produced four `declared_bad_state` findings — so
 before it, this package was **clean about the four worst units in the
 organisation**. A gap in a feeder looks exactly like a quiet organisation.
 
-*Worked around* in `feeder._add_state_series`, which writes to the public
-`session.history`. When a state feeder lands, that function goes.
+*Worked around* in `feeder._add_state_series`, which wrote to the public
+`session.history`. **Closed by engine 0.2.11**: `add_observations` keeps a
+reading of a property the model declares `type: STATE` as a state, so the
+feeder sends both kinds through it and the workaround is gone.
 
 **F2. HOMEOSTASIS answers nothing at a monthly cadence through the documented
 entry point.** It reads `homeostasis_baseline_days`, defaulted to 7, and ignores
@@ -54,6 +58,14 @@ reaching the parameter means rebuilding the reasoner and replacing
 `session.reasoner`. **That is F1 again** — the session dropping a capability the
 layer beneath it has, a state series there and an `AxiomParameters` here, each
 with a working back door. One upstream ask, not two.
+
+**Closed by engine 0.2.11**: a model declares `axiom_parameters:`, and this one
+declares `homeostasis_baseline_days: 3650`. Measured through the session on the
+shipped fixture, the 21 declines hold through the twenty-ninth capture and are
+gone at the thirtieth. **The five-capture figure above does not reproduce on any
+current engine** and is left as measured: HOMEOSTASIS now waits for its own
+thirty-sample floor, so five captures decline `insufficient_samples` whatever
+the baseline.
 
 **F3. The window defaults to one hour and is a ceiling, and nothing says so at
 the point of use.** Undeclared, 36 monthly captures produce byte-identical

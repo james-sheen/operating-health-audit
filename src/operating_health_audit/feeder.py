@@ -45,6 +45,10 @@ def _engine():
     return api
 
 
+#: A capture with no points, to load a model against when none was supplied.
+_EMPTY = type("_Empty", (), {"points": ()})()
+
+
 #: The property name a state is fed under. The model declares STABILITY on
 #: `status`, so that is the name the engine looks for.
 STATE_PROPERTY = "status"
@@ -68,32 +72,54 @@ def _fed(point: Any) -> dict[str, Any]:
     return fed
 
 
-def _add_state_series(session: Any, entity: str, indicator: str,
-                      values: Sequence[Any], interval_seconds: float) -> None:
-    """Feed a STATE series, which the session's own feeder cannot.
+def _series(captures: Sequence[Any]) -> dict[tuple[str, str], list[Any]]:
+    """Every (unit, quantity) the captures report, in capture order."""
+    series: dict[tuple[str, str], list[Any]] = {}
+    for export in captures:
+        for point in getattr(export, "points", ()) or ():
+            for name, value in _fed(point).items():
+                series.setdefault((point.name, name), []).append(value)
+    return series
 
-    MEASURED against arbiter-engine 0.1.14. `EngineSession.add_observations`
-    casts every sample with `float(value)`, so a state raises ValueError -- while
-    `InMemoryObservationHistory.add` takes `value: Any` and accepts one, the
-    engine declares a `state` indicator type, and STABILITY reads state history
-    out of exactly that store. A consumer following the front door can satisfy
-    the numeric axioms and not the state half of STABILITY.
 
-    This writes to `session.history` directly, which is public and is how the
-    engine's own docstrings describe reaching an input kind whose feeder is
-    missing. Filed upstream as james-sheen/arbiter#14 rather than left as a
-    local trick; when a state feeder lands, this function goes and the call
-    above becomes unconditional.
+def open_session(model_path: str, captures: Sequence[Any], *,
+                 interval_seconds: float = 2_592_000.0) -> Any:
+    """A session with the model loaded and the series fed, not yet checked.
+
+    Split out of `run` so the other stages of the loop -- `hypothesize`, `plan`
+    and whatever the engine adds -- can be asked about the same session `run`
+    judges, rather than a second one built to look like it. `captures` must not
+    be empty; `run` says what an empty series means before it gets here.
     """
-    from datetime import timedelta
+    api = _engine()
+    session = api.EngineSession()
+    try:
+        session.load_model(model_path)
+    except Exception as problem:            # yaml errors are not ValueError
+        raise ModelUnreadable(f"{model_path} could not be loaded as a domain model: "
+                              f"{type(problem).__name__}: {problem}") from None
 
-    from arbiter_engine.api import now_utc
+    latest = captures[-1]
+    series = _series(captures)
 
-    now = now_utc()
-    count = len(values)
-    for i, value in enumerate(values):
-        session.history.add(entity, indicator, value,
-                            now - timedelta(seconds=(count - i) * interval_seconds))
+    for point in getattr(latest, "points", ()) or ():
+        session.add_entity(point.name, point.unit_type,
+                           properties=_fed(point), name=point.name)
+    # CONNECTIVITY reads relationships and nothing else, so an edge that never
+    # reaches this call is an edge the engine cannot see however well declared.
+    for point in getattr(latest, "points", ()) or ():
+        for relation, target in (getattr(point, "edges", {}) or {}).items():
+            session.add_relationship(point.name, relation, target)
+
+    # ONE DOOR FOR BOTH KINDS. A state series used to go round the session into
+    # `session.history`, because `add_observations` cast every reading to a
+    # number (FINDINGS F1, filed upstream as issue #14). From engine 0.2.11 the
+    # session keeps a reading of a property the model declares `type: STATE` as
+    # a state, so the workaround is gone and the floor names that release.
+    for (entity, indicator), values in series.items():
+        session.add_observations(entity, indicator, values,
+                                 interval_seconds=interval_seconds)
+    return session
 
 
 def run(model_path: str, captures: Sequence[Any], *,
@@ -106,43 +132,18 @@ def run(model_path: str, captures: Sequence[Any], *,
     does not run at is how a burn-in silently never completes.
     """
     api = _engine()
-    session = api.EngineSession()
-    try:
-        session.load_model(model_path)
-    except Exception as problem:            # yaml errors are not ValueError
-        raise ModelUnreadable(f"{model_path} could not be loaded as a domain model: "
-                              f"{type(problem).__name__}: {problem}") from None
-
     if not captures:
+        # The model is still read first, so a broken one is reported as broken
+        # rather than as an empty series.
+        open_session(model_path, [_EMPTY], interval_seconds=interval_seconds)
         return {"exit_code": x.INCOMPLETE, "findings": [], "not_checked": [],
                 "engine": None,
                 "could_not_run": "no captures were supplied, and an empty series "
                                  "reports the same as a complete one about an "
                                  "organisation that never changed"}
 
-    latest = captures[-1]
-    series: dict[tuple[str, str], list[Any]] = {}
-    for export in captures:
-        for point in getattr(export, "points", ()) or ():
-            for name, value in _fed(point).items():
-                series.setdefault((point.name, name), []).append(value)
-
-    for point in getattr(latest, "points", ()) or ():
-        session.add_entity(point.name, point.unit_type,
-                           properties=_fed(point), name=point.name)
-    # CONNECTIVITY reads relationships and nothing else, so an edge that never
-    # reaches this call is an edge the engine cannot see however well declared.
-    for point in getattr(latest, "points", ()) or ():
-        for relation, target in (getattr(point, "edges", {}) or {}).items():
-            session.add_relationship(point.name, relation, target)
-
-    for (entity, indicator), values in series.items():
-        if all(isinstance(v, (int, float)) for v in values):
-            session.add_observations(entity, indicator, values,
-                                     interval_seconds=interval_seconds)
-        else:
-            _add_state_series(session, entity, indicator, values, interval_seconds)
-
+    session = open_session(model_path, captures, interval_seconds=interval_seconds)
+    series = _series(captures)
     envelope = api.check(session)
     payload = envelope.to_dict() if hasattr(envelope, "to_dict") else dict(envelope)
 

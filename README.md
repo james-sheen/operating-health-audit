@@ -26,8 +26,8 @@ baselines.
 Eleven findings from a single capture of the shipped fourteen-unit example: four
 thresholds exceeded, three in warning, and four units sitting in a state the
 model declares bad. `docs/burn-in.md` carries the measured table of what each
-further capture unlocks, and the one arm that never answers at a monthly
-cadence.
+further capture unlocks: the last arm, HOMEOSTASIS's baseline, answers from
+the thirtieth monthly capture.
 
 ## The verbs
 
@@ -75,8 +75,9 @@ back detached, and that is the correct answer about it.
   line, so `capture` produces an export with no edges and the audit says every
   unit is detached. Deriving an org chart from an id prefix would be deriving a
   relationship from a name.
-- **It does not report a baseline deviation.** HOMEOSTASIS cannot answer at a
-  monthly cadence on the engine this pins, for a reason `docs/burn-in.md`
-  records and which is filed upstream.
+- **It does not report a baseline deviation before thirty captures.**
+  HOMEOSTASIS needs thirty samples, which at a monthly cadence is two and a half
+  years; the model declares the baseline window that lets it answer then
+  (`docs/burn-in.md`).
 - **Its example numbers are invented.** No unit, person or figure in
   `examples/` describes a real organisation.

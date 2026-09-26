@@ -1,39 +1,40 @@
 # Burn-in: what this audit can answer, and after how many captures
 
-Measured against `arbiter-engine` 0.1.14 and `presence-audit` 0.1.8 by running
+Measured against `arbiter-engine` 0.2.11 and `presence-audit` 0.1.12 by running
 `battery/make_series.py` over the shipped case study. Every number below is a
 run, not a reading of a constant — the first draft of this document was written
-from `types.AXIOM_MINIMUMS` and was wrong in both directions.
+from `types.AXIOM_MINIMUMS` and was wrong in both directions. It was measured
+first on 0.1.14, when one arm could never answer at this cadence; the table was
+re-measured when 0.2.11 made it answer, and several of its old rows had moved.
 
 ## The one-line answer
 
 **Eleven findings from a single capture.** The audit is useful on day one. Three
-arms need a history and one can never answer at a monthly cadence.
+arms need a history, and every one of them answers by the thirtieth capture.
 
 ## The measured table
 
 One capture per month, the cadence the model declares.
 
-| captures | findings | what changed |
-|---|---|---|
-| 1 | **11** | 4 `threshold_exceeded`, 3 `threshold_warning`, 4 `declared_bad_state` |
-| 2 | 11 | — |
-| 3 | 11 | MONOTONICITY's reversal arm reaches its floor: 17 declines → 2 |
-| 4 | **22** | 11 `monotonicity_reversal` findings appear |
-| 5 | 22 | — |
-| 10 | 22 | STABILITY resolves completely: 16 declines → 0 |
-| 20 | 22 | — |
-| 30 | 22 | HOMEOSTASIS **still** 21 declines, and always will |
+| captures | findings | declines | what changed |
+|---|---|---|---|
+| 1 | **11** | 80 | 4 `threshold_exceeded`, 3 `threshold_warning`, 4 `declared_bad_state` |
+| 2 | 7 | 80 | the four bad states walked off by the fixture |
+| 3 | 16 | 80 | MONOTONICITY reaches its floor: 17 `insufficient_samples` → 2 |
+| 4 | **18** | 80 | 11 `monotonicity_reversal` findings appear |
+| 10 | 18 | 64 | STABILITY resolves completely: 16 declines → 0 |
+| 30 | 18 | 43 | HOMEOSTASIS resolves completely: 21 declines → 0 |
 
 103 invariants are checked at every row. The count does not grow; what changes
 is how many of them can answer.
 
-**THE ELEVEN AT n=4 ARE AN ARTIFACT OF THE FIXTURE AND NOT A FACT ABOUT ACME.**
-`make_series.py` walks every numeric by a fixed fraction each step, so a
-`monotonicity_reversal` there is the walk reversing, not a division reversing.
-They are in the table because the question it answers is *at how many captures
-does this arm start answering at all*, which is a fact about the engine. A
-finding produced by a fixture is never evidence about an organisation.
+**THE FINDINGS AFTER n=1 ARE AN ARTIFACT OF THE FIXTURE AND NOT A FACT ABOUT
+ACME.** `make_series.py` walks every numeric by a fixed fraction each step and
+every unit round its declared states, so a `monotonicity_reversal` there is the
+walk reversing and a bad state at n=3 is the walk arriving at one. They are in
+the table because the question it answers is *at how many captures does this arm
+start answering at all*, which is a fact about the engine. A finding produced by
+a fixture is never evidence about an organisation.
 
 ## The three things that decide whether an arm answers
 
@@ -67,39 +68,43 @@ never fed state. `EngineSession.add_observations` casts every sample with
 `value: Any` and accepts one. The engine declares a `state` indicator type and
 runs STABILITY over it, and its own feeder cannot supply the series.
 
-`feeder._add_state_series` writes to the public `session.history` instead.
-**Filed upstream.** When a state feeder lands, that function goes.
+Filed upstream as issue #14, and closed by engine 0.2.11: the session now keeps
+a reading of a property the model declares `type: STATE` as a state, and the
+feeder sends both kinds through `add_observations`. The workaround that wrote to
+the public `session.history` is gone, and the engine floor names that release.
 
 Feeding state is what produced the four `declared_bad_state` findings — so
 before it, the audit was **clean about the four worst units in the
 organisation**. A gap in a feeder looks exactly like a quiet organisation.
 
-## HOMEOSTASIS cannot answer at this cadence, and that is not a burn-in
+## HOMEOSTASIS answers from the thirtieth capture, because the model says how
 
-It reads `homeostasis_baseline_days`, **fixed at 7**, and ignores the
-indicator's `window:` entirely — 21 declines at 1 capture and 21 at 30, at every
-window tried. A 7-day baseline holds at most one monthly observation.
+It reads `homeostasis_baseline_days`, **seven by default**, and ignores the
+indicator's `window:` — so on engine 0.2.10 and earlier it declined 21 times at
+1 capture and 21 times at 30, at every window tried. A seven-day baseline holds
+at most one monthly observation.
 
-Nothing reachable closes it:
+Nothing a model could write reached it then: the published engine read no
+`axiom_parameters` at all, and `set_threshold_override` reaches HOMEOSTASIS's
+z-scores and not its baseline window. **Filed upstream** with the state feeder,
+as issue #14. From engine 0.2.11 the model declares the block, and this one
+declares the windows' ten years:
 
-- the domain model cannot set it — **`axiom_parameters` is not read by the
-  published engine at all**, so the block in the Core's `consulting.yaml` has no
-  effect here;
-- `set_threshold_override` reaches HOMEOSTASIS's `z_warning`/`z_critical` and
-  not its baseline window, per the engine's own `OVERRIDE_CONSULTED_BY`.
+    axiom_parameters:
+      homeostasis_baseline_days: 3650
 
-So the seven HOMEOSTASIS indicators are declared and permanently declining. They
-stay declared: the decline names the reason, and dropping them would make the
-model agree with one engine version instead of with the domain. **Filed
-upstream.** Until it lands, no operating review on a monthly cadence gets a
-baseline-deviation answer from this engine.
+Measured: 21 declines through the twenty-ninth capture, **none at the thirtieth**
+— the axiom's own thirty-sample floor is now the only thing it waits for.
 
-## The kill criterion
+## The kill criterion, and how it resolved
 
-If a future engine release makes HOMEOSTASIS reachable and the seven indicators
-still decline after 30 captures, the declarations are wrong rather than early,
-and they come out. Recorded now, while the reason is fresh, because a burn-in
-with no end condition is indistinguishable from a model that never worked.
+Recorded when HOMEOSTASIS could not answer: *if a future engine release makes
+HOMEOSTASIS reachable and the seven indicators still decline after 30 captures,
+the declarations are wrong rather than early, and they come out.* Engine 0.2.11
+made it reachable, and at 30 captures the seven evaluate. **The declarations were
+early, not wrong, and they stay.** The criterion was worth writing down: it is
+what turned *it still declines* from a standing excuse into a question with an
+answer.
 
 ## What `no_threshold` and `missing_property` are
 
