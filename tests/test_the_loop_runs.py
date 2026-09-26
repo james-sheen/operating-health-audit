@@ -132,13 +132,13 @@ class TestEveryStageAnswersOrDeclinesByName:
         assert "cpt_missing" in _reasons(payload)
         assert _unpublished(payload) == []
 
-    @pytest.mark.xfail(strict=True, reason=(
-        "arbiter-engine 0.2.13: `hypothesize` ranks the declared causes with a "
-        "posterior of None and drops the `cpt_missing` its inference declined, so "
-        "the ranking is silent about why it has no number. Strict, so the day the "
-        "engine carries the decline this turns red and the marker comes off."))
     def test_the_ranking_says_why_it_has_no_number(self, session):
-        assert "cpt_missing" in _reasons(api.hypothesize(session, LED).to_dict())
+        """F10: the ranking carries the decline its inferences made, and each
+        cause names its own. It was a strict xfail until the engine did."""
+        payload = api.hypothesize(session, LED).to_dict()
+        assert "cpt_missing" in _reasons(payload)
+        assert all(c["declined"] == ["cpt_missing"]
+                   for c in payload["hypothesis"]["candidates"])
 
     def test_plan(self, session):
         """The model declares one lever and no objective, and the lever names no

@@ -121,9 +121,11 @@ declines `cpt_missing` by name -- *declare `causal.weight` on these edges* -- an
 `hypothesize` on the same unit returns the two executives who lead it, each with
 `posterior: null`, beside an empty `not_checked`. The ranking is right about WHO
 and silent about why it has no number, so a reader of it alone cannot tell *no
-strength declared* from *computed and lost*. Not filed yet.
-`tests/test_the_loop_runs.py` carries it as a strict xfail, so the release that
-fixes it turns this suite red and the marker comes off.
+strength declared* from *computed and lost*. **Fixed in the engine before 0.2.13
+shipped**, found by this migration: the ranking now carries the declines of the
+inferences behind it, and each cause names its own as `declined`. The strict xfail
+that held it in `tests/test_the_loop_runs.py` came off in the same release as this
+package's floor.
 
 ## A claim this project made and had to withdraw
 
