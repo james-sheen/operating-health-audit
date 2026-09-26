@@ -114,7 +114,7 @@ class OperatingVocabulary:
         changes = []
         was, now = getattr(old, "state", None), getattr(new, "state", None)
         if was != now and (was or now):
-            changes.append(Change(kind="state_changed", sensor=getattr(new, "name", ""),
+            changes.append(Change(kind="state_changed", point=getattr(new, "name", ""),
                                   detail=f"state moved from {was!r} to {now!r}",
                                   before_path=getattr(old, "path", ""),
                                   after_path=getattr(new, "path", "")))
@@ -123,21 +123,21 @@ class OperatingVocabulary:
         for relation, target in before_edges.items():
             if relation not in after_edges:
                 changes.append(Change(
-                    kind="edge_lost", sensor=getattr(new, "name", ""),
+                    kind="edge_lost", point=getattr(new, "name", ""),
                     detail=f"{relation} to {target!r} is no longer reported, so this "
                            f"unit reports into nothing by that relation",
                     before_path=getattr(old, "path", ""),
                     after_path=getattr(new, "path", "")))
             elif after_edges[relation] != target:
                 changes.append(Change(
-                    kind="edge_moved", sensor=getattr(new, "name", ""),
+                    kind="edge_moved", point=getattr(new, "name", ""),
                     detail=f"{relation} moved from {target!r} to {after_edges[relation]!r}",
                     before_path=getattr(old, "path", ""),
                     after_path=getattr(new, "path", "")))
         lost = sorted(set(getattr(old, "values", {}) or {}) - set(getattr(new, "values", {}) or {}))
         if lost:
             changes.append(Change(
-                kind="indicator_stopped_reporting", sensor=getattr(new, "name", ""),
+                kind="indicator_stopped_reporting", point=getattr(new, "name", ""),
                 detail=f"stopped reporting {', '.join(lost)}; the unit is still present, "
                        f"so this is a gap in the export rather than in the organisation",
                 before_path=getattr(old, "path", ""), after_path=getattr(new, "path", "")))
@@ -145,7 +145,7 @@ class OperatingVocabulary:
 
     def capture_changes(self, before: object, after: object) -> Sequence[object]:
         if bool(getattr(before, "complete", False)) and not bool(getattr(after, "complete", False)):
-            return (Change(kind="export_became_partial", sensor="",
+            return (Change(kind="export_became_partial", point="",
                            detail="the later export is not complete, so every absence in "
                                   "it is unattributable between the organisation and the "
                                   "exporter", before_path="", after_path=""),)
@@ -176,7 +176,7 @@ class OperatingVocabulary:
             edges = dict(getattr(point, "edges", {}) or {})
             if wanted and wanted not in edges:
                 findings.append(Finding(
-                    kind="detached_unit", sensor=name,
+                    kind="detached_unit", point=name,
                     detail=f"present and reporting, and declares no {wanted}; a "
                            f"{kind} that reports into nothing is either dissolved or "
                            f"mis-exported, and the export cannot say which",

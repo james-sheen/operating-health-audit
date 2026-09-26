@@ -6,6 +6,34 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.2] — 2026-09-26
+
+The loop runs every stage the engine offers, and the model declares what each
+stage reads, or says why it does not.
+
+### Changed
+
+- **The core's names.** A finding's and a change's subject is written and read
+  as `point`, and change kinds are printed in this package's word --
+  `operating_unit_removed` -- whichever core is installed. The range is
+  `presence-audit>=0.1.13,<0.3`, and the suite ran on a 0.2.0 build as well.
+- **The engine floor is 0.2.13**, forced by a failing control: the loop opens and
+  resolves a case and reads the per-stage report, and 0.2.12 has neither.
+
+### Added
+
+- **Which way a failure travels**: `leads` and `reports_to` are declared causal,
+  each in the direction its edge runs, with no strength -- nothing gives one. The
+  engine's ranking therefore names causes without numbers (FINDINGS F10).
+- **One lever**, `add_headcount` on a department, whose `tolerance:` is how close
+  the next capture must come to the people added. An executed hire is filed with
+  `file_action`, and the next capture decides which arm the world followed.
+- **`cases:`**: a case closes after two monthly captures in a row with nothing at
+  `warning` or above on its indicator.
+- **`detect` prints, beside each finding, what could explain it**: the engine's
+  ranking of the declared causes, or the reason it declined. Nothing in it enters
+  the exit code.
+
 ## [0.1.1] — 2026-09-26
 
 The first tagged release.

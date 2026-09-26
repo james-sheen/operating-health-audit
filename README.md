@@ -21,6 +21,15 @@ healthy numbers, and reports into nothing.
 declared bad states, and -- once enough captures accumulate -- trends and
 baselines.
 
+**Beside each finding, what could explain it.** `detect` asks the engine's
+`hypothesize` about each unit with a finding and prints the answer beside it:
+the declared causes, each with its posterior, or the reason the engine declined.
+The model declares which way a failure travels -- into a department from the
+executives who lead it, into a division from the departments reporting to it --
+and no strength, so today the causes come without numbers. The rest of the loop
+runs too: an executed hire is filed and graded against the next capture, and a
+case opened on a finding closes after two clean monthly captures.
+
 ## What it answers on day one
 
 Eleven findings from a single capture of the shipped fourteen-unit example: four

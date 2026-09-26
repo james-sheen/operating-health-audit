@@ -113,6 +113,18 @@ domain's own kinds and nothing else. The union happens in `Finding.is_regression
 Rewritten to assert it there, and it now also checks the core's seven kinds still
 score — the half a vertical could actually break.
 
+## In `arbiter-engine` 0.2.13
+
+**F10. `hypothesize` ranks causes it has no number for, and does not say why.**
+With the causal direction declared and no strength, `infer` on `dept-sales`
+declines `cpt_missing` by name -- *declare `causal.weight` on these edges* -- and
+`hypothesize` on the same unit returns the two executives who lead it, each with
+`posterior: null`, beside an empty `not_checked`. The ranking is right about WHO
+and silent about why it has no number, so a reader of it alone cannot tell *no
+strength declared* from *computed and lost*. Not filed yet.
+`tests/test_the_loop_runs.py` carries it as a strict xfail, so the release that
+fixes it turns this suite red and the marker comes off.
+
 ## A claim this project made and had to withdraw
 
 **Reading `AXIOM_MINIMUMS` and concluding that nothing can answer from a single

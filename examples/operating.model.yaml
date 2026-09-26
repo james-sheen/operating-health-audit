@@ -89,6 +89,69 @@ domain:
   axiom_parameters:
     homeostasis_baseline_days: 3650
 
+  # WHICH WAY A FAILURE TRAVELS, declared where the structure says so and nowhere
+  # else. The engine reads a causal rule as the direction of the edge it names --
+  # the edge's source is the cause -- so only a relation whose exported edge
+  # already runs from the failing unit to the one it reaches can carry one:
+  #
+  # - `leads`, executive to department. A department is run by the executive who
+  #   leads it; a failure of leadership reaches the department it leads, and the
+  #   model already checks that edge with CONNECTIVITY.
+  # - `reports_to`, department to division. A division's figures are its
+  #   departments' figures, so a department that fails takes its division's with
+  #   it.
+  #
+  # NOT `depends_on`: a process depends on a department, and a failure travels
+  # from the department to the process -- against the edge. Declaring it would
+  # say the process fails the department. NOT `funds`: nothing here says which
+  # way a funding failure runs, and a direction nobody can state is not declared.
+  #
+  # NO STRENGTHS. Nothing gives one: this model is invented, and a weight is a
+  # measured fraction of failures that travel. Without one `hypothesize` answers
+  # `cpt_missing`, which is the true answer while nobody has a number to give.
+  relationship_rules:
+    - type: leads
+      source_type: Executive
+      target_type: Department
+      edge_direction: causal
+    - type: reports_to
+      source_type: Department
+      target_type: Division
+      edge_direction: causal
+
+  # THE ONE LEVER THIS MODEL DECLARES, so an action somebody takes can be filed
+  # and graded (`file_action`). Adding people to a department is recorded as
+  # executed, and the next monthly capture says whether the headcount moved by
+  # what was added. `tolerance` is how close that capture must come: invented,
+  # like every number here -- an engagement states its own from how its HR
+  # system counts people between a decision and a month-end.
+  action_templates:
+    - name: add_headcount
+      applies_to: Department
+      description: Add people to a department's headcount.
+      parameters_schema:
+        people:
+          type: number
+          entity_property: headcount
+          tolerance: 2
+      effect: add
+      source: >-
+        a hiring decision recorded as executed; the headcount a department reports
+        moves by the people added, give or take the joiners and leavers between the
+        decision and the capture
+  # WHEN A CASE CLOSES. A case opens on a finding and resolves after this many
+  # checks in a row that looked at its indicator and found nothing at or above
+  # this severity.
+  cases:
+    # `warning` because that is where this model's bounds put what a review asks
+    # about: a case that closed while a warning still stood would close on a
+    # problem the review still names.
+    severity: warning
+    # TWO monthly captures: one clean month can be the month a figure happened
+    # to dip, and three would carry a unit that recovered into the next quarter's
+    # review. Two is the smallest run that is not one reading.
+    consecutive_checks: 2
+
   indicators:
 
     Division:

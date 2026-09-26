@@ -31,8 +31,8 @@ def run(declaration, export, *, require_complete: bool = False) -> Mapping[str, 
         sections = {name: build(export) for name, build in vocab.report_sections().items()}
 
     findings = list(report.findings)
-    seen = {(f.kind, f.sensor) for f in findings}
-    findings.extend(f for f in extra if (f.kind, f.sensor) not in seen)
+    seen = {(f.kind, f.point) for f in findings}
+    findings.extend(f for f in extra if (f.kind, f.point) not in seen)
 
     kinds = [f.kind for f in findings]
     code = x.code_for(kinds, require_complete=require_complete)
@@ -42,7 +42,7 @@ def run(declaration, export, *, require_complete: bool = False) -> Mapping[str, 
         "complete": bool(getattr(export, "complete", False)),
         "declared": len(declaration.points),
         "captured": len(getattr(export, "points", ()) or ()),
-        "findings": [{"kind": f.kind, "unit": f.sensor, "detail": f.detail,
+        "findings": [{"kind": f.kind, "unit": f.point, "detail": f.detail,
                       "declared_in": getattr(f, "declared_in", ""),
                       "path": getattr(f, "live_path", "")} for f in findings],
         "unclassified": list(x.unclassified(kinds)),

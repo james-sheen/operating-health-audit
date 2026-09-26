@@ -114,15 +114,15 @@ def test_this_domains_kinds_are_scored_without_displacing_the_cores() -> None:
 
     with voc.using(v):
         # the domain's own kind scores...
-        assert Finding(kind="detached_unit", sensor="d", detail="",
+        assert Finding(kind="detached_unit", point="d", detail="",
                        declared_in="", live_path="").is_regression
         # ...and the core's still do, which is the half a vertical could break
         for kind in sorted(REGRESSION_KINDS):
-            assert Finding(kind=kind, sensor="d", detail="", declared_in="",
+            assert Finding(kind=kind, point="d", detail="", declared_in="",
                            live_path="").is_regression, (
                 f"{kind} stopped scoring once this vertical supplied its own set")
         # and something neither of them names still does not
-        assert not Finding(kind="edge_moved", sensor="d", detail="",
+        assert not Finding(kind="edge_moved", point="d", detail="",
                            declared_in="", live_path="").is_regression
 
 

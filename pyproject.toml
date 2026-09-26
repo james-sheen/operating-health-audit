@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "operating-health-audit"
-version = "0.1.1"
+version = "0.1.2"
 description = "Of the operating units a target operating model declares, which are present and reporting, which are absent, and which appeared undeclared."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -24,7 +24,13 @@ classifiers = [
 
 # Stage 1 is the shared core and nothing else. The engine is Stage 2 and is an
 # extra, because a presence audit answers without it and says so.
-dependencies = ["presence-audit>=0.1.9,<0.2"]
+#
+# THE CORE'S FLOOR IS 0.1.13: its findings and changes take `point`, which this
+# package now writes into them, and on 0.1.12 the keyword does not exist. THE
+# CEILING IS 0.3: 0.2.0 removes the old names this package no longer writes, and
+# the suite was run against a 0.2.0 build as well as 0.1.13 before the range
+# admitted it.
+dependencies = ["presence-audit>=0.1.13,<0.3"]
 
 [project.optional-dependencies]
 # Floor is 0.1.14 and it was MEASURED, not chosen: this package reads
@@ -44,7 +50,14 @@ dependencies = ["presence-audit>=0.1.9,<0.2"]
 # number -- measured, the first `status` raises ValueError there -- and the model
 # declares `axiom_parameters:`, which 0.2.10 and earlier read as nothing. Both
 # were FINDINGS F1 and F2, filed upstream as issue #14 and closed by 0.2.11.
-detect = ["arbiter-engine>=0.2.11,<0.3"]
+#
+# THE FLOOR IS 0.2.13, FORCED BY A FAILING CONTROL AGAIN. The loop scenario opens
+# a case on a finding and resolves it, and checks `model_describe`'s per-stage
+# report against what the run did. Measured against 0.2.12: 2 failed, 147 passed
+# -- `api.open_case` does not exist there (AttributeError) and the model
+# description has no `stages` (KeyError). The act leg passes on 0.2.12, which is
+# where `file_action` and a parameter's `tolerance:` arrived.
+detect = ["arbiter-engine>=0.2.13,<0.3"]
 
 [project.urls]
 Homepage = "https://github.com/james-sheen/operating-health-audit"

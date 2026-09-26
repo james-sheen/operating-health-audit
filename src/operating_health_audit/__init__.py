@@ -13,6 +13,6 @@ __all__ = ["__version__", "DECLARATION_FORMAT", "CAPTURE_FORMAT"]
 #: THE version literal. `pyproject.toml` does not read it from here today, so a
 #: guard in the suite asserts the two agree -- two copies of one number drift,
 #: and a release is exactly when nobody is looking.
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 from .formats import CAPTURE_FORMAT, DECLARATION_FORMAT  # noqa: E402

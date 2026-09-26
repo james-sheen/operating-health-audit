@@ -122,6 +122,24 @@ def open_session(model_path: str, captures: Sequence[Any], *,
     return session
 
 
+def ranking(api: Any, session: Any, entity_id: str) -> Mapping[str, Any]:
+    """What could explain a finding on this unit, from the engine's own verb.
+
+    The causes `hypothesize` ranks, each with its posterior, and every reason it
+    declined, by name. Beside the finding rather than in the verdict: a ranking
+    is where to look next, not a judgement about the organisation, so nothing
+    here enters the exit code. A posterior of None beside no decline is printed
+    as it arrived -- this package does not invent the missing word for it.
+    """
+    leg = api.hypothesize(session, entity_id).to_dict().get("hypothesis") or {}
+    return {
+        "causes": [[c.get("cause"), c.get("posterior")]
+                   for c in leg.get("candidates") or ()],
+        "declined": sorted({d.get("reason") for d in leg.get("not_checked") or ()
+                            if d.get("reason")}),
+    }
+
+
 def run(model_path: str, captures: Sequence[Any], *,
         interval_seconds: float = 2_592_000.0) -> Mapping[str, Any]:
     """Feed a series and return the engine's envelope plus this package's score.
@@ -154,11 +172,21 @@ def run(model_path: str, captures: Sequence[Any], *,
     if dropped:
         kinds.append("model_not_read")
 
+    # ONE RANKING PER UNIT, beside each of its findings. Asked once per unit
+    # because the verb answers about the unit, whichever of its readings fired.
+    rankings: dict[str, Mapping[str, Any]] = {}
+    findings = []
+    for finding in payload.get("findings", []):
+        unit = finding.get("entity_id")
+        if unit and unit not in rankings:
+            rankings[unit] = ranking(api, session, unit)
+        findings.append({**finding, "ranking": rankings.get(unit)})
+
     return {
         "exit_code": x.code_for(kinds),
         "captures_fed": len(captures),
         "series_fed": len(series),
-        "findings": payload.get("findings", []),
+        "findings": findings,
         "not_checked": payload.get("not_checked", []),
         "checked": payload.get("checked", {}),
         "engine": payload.get("meta", {}),
