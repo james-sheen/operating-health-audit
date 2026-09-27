@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.3] — 2026-09-27
+
 ### Added
 
 - **A plan ranks the hiring rounds.** The model declares an objective,
