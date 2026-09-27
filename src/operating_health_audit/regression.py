@@ -12,6 +12,7 @@ from typing import Any, Mapping, Sequence
 
 from presence_audit import regression as _core, vocabulary as _vocabulary
 
+from . import capture as _capture
 from . import exit_contract as x
 from .formats import REGRESSION_FORMAT
 from .vertical import OperatingVocabulary
@@ -19,6 +20,18 @@ from .vertical import OperatingVocabulary
 
 def run(before, after, *, prefix_map: Sequence[tuple[str, str]] = (),
         require_complete: bool = False) -> Mapping[str, Any]:
+    # THE SAME REFUSAL THE LOADER MAKES, for a caller who never went through
+    # it. Two captures of nothing compared per unit report `ran` with no
+    # changes, exit 0: *nothing moved* is true of an organisation with no units.
+    refusal = _capture.refusal([("before", before), ("after", after)])
+    if refusal:
+        return {"format": REGRESSION_FORMAT,
+                "before": getattr(before, "captured_at", ""),
+                "after": getattr(after, "captured_at", ""),
+                "per_unit_comparisons": "not run", "changes": [],
+                "unclassified": [], "why": [], "could_not_run": refusal,
+                "exit_code": x.INCOMPLETE}
+
     vocab = OperatingVocabulary()
     with _vocabulary.using(vocab):
         report = _core.compare_walks(before, after, prefix_map=prefix_map)

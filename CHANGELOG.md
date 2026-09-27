@@ -6,6 +6,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **A capture of nothing is refused wherever it enters.** `capture.load`
+  refuses a file with no units, in the sentence `capture` already used for a CSV
+  with no rows, and a unit with no name by its position instead of dropping it;
+  `capture` refuses a CSV row with no `id` by its line, and a file with no `id`
+  column. `detect`, `regression`, `presence` and `gate` read through it, so none
+  of them answers clean or ready on an empty export any more -- `presence`
+  reported fourteen absences there and now refuses like the rest. On the API,
+  `feeder.run` answers `could_not_run` for a series item that is not a loaded
+  capture or holds no units, anywhere in the series, `open_session` raises
+  `CaptureUnusable` with the same sentence, and `regression.run` refuses two
+  captures of nothing (FINDINGS F11).
+
 ## [0.1.2] — 2026-09-26
 
 The loop runs every stage the engine offers, and the model declares what each

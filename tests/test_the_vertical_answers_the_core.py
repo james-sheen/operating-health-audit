@@ -60,12 +60,14 @@ def test_a_unit_replaced_at_the_same_address_is_not_the_same_unit() -> None:
 
 
 def test_an_incomplete_export_skips_the_per_unit_comparisons_and_says_so() -> None:
-    """False means SKIPPED, never *ran and found nothing*."""
+    """False means SKIPPED, never *ran and found nothing*. Each export carries a
+    unit: two exports of nothing are refused before completeness is asked (F11)."""
     from operating_health_audit import regression
 
     v = OperatingVocabulary()
-    whole = _capture.Export(points=(), complete=True)
-    partial = _capture.Export(points=(), complete=False)
+    unit = (_capture.Reading(name="dept-sales", unit_type="Department"),)
+    whole = _capture.Export(points=unit, complete=True)
+    partial = _capture.Export(points=unit, complete=False)
     assert v.captures_comparable(whole, whole) is True
     assert v.captures_comparable(whole, partial) is False
     out = regression.run(whole, partial)

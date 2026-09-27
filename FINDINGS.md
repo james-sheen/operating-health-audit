@@ -127,6 +127,18 @@ inferences behind it, and each cause names its own as `declined`. The strict xfa
 that held it in `tests/test_the_loop_runs.py` came off in the same release as this
 package's floor.
 
+## In this package, at 0.1.2
+
+**F11. A capture of nothing ran clean.** `feeder.run` read `.points` off
+whatever it was handed and took a missing attribute as none, so a path, a string
+or a parsed dict passed in place of a loaded capture fed no units and answered
+exit 0 with 0 entities. The loader did the same from a file: `units: []`, or
+units without a name, loaded as an empty export, and `detect` exited 0,
+`regression` said `ran` with nothing moved, and `gate` answered ready. `from_csv`
+had refused an empty file from the first release; `load` never learned it. Found
+by an outside verification that ran the API, which read the command line as
+unaffected -- it was not. Every door now refuses, in one sentence.
+
 ## A claim this project made and had to withdraw
 
 **Reading `AXIOM_MINIMUMS` and concluding that nothing can answer from a single

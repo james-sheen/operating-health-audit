@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping, Sequence
 
+from . import capture as _capture
 from . import exit_contract as x
 from .vertical import REQUIRED_EDGE, OperatingVocabulary
 
@@ -35,6 +36,42 @@ class ModelUnreadable(ValueError):
     """The model file is not one the engine could load."""
 
 
+class CaptureUnusable(ValueError):
+    """A series this package cannot feed: empty, or holding an item that is not
+    a loaded capture or is one with no units. Raised by `open_session`; `run`
+    answers the same sentence as `could_not_run` instead of raising."""
+
+
+#: What `run` says when it is handed no captures at all.
+NO_CAPTURES = ("no captures were supplied, and an empty series reports the same "
+               "as a complete one about an organisation that never changed")
+
+
+def unusable(captures: Sequence[Any]) -> str | None:
+    """Why this series cannot be fed, or None when it can.
+
+    EVERY ITEM, NOT ONLY THE LATEST. An empty capture partway through a series
+    is the whole-series defect a month at a time: each unit's series one reading
+    short, and every month after it moved up a slot.
+    """
+    if not captures:
+        return NO_CAPTURES
+    return _capture.refusal([(f"captures[{position}]", item)
+                             for position, item in enumerate(captures)])
+
+
+def _loaded(model_path: str) -> Any:
+    """A session with the model loaded and nothing fed."""
+    api = _engine()
+    session = api.EngineSession()
+    try:
+        session.load_model(model_path)
+    except Exception as problem:            # yaml errors are not ValueError
+        raise ModelUnreadable(f"{model_path} could not be loaded as a domain model: "
+                              f"{type(problem).__name__}: {problem}") from None
+    return session
+
+
 def _engine():
     try:
         from arbiter_engine import api
@@ -43,10 +80,6 @@ def _engine():
             f"Stage 2 needs the engine: pip install operating-health-audit[detect] "
             f"({problem})") from None
     return api
-
-
-#: A capture with no points, to load a model against when none was supplied.
-_EMPTY = type("_Empty", (), {"points": ()})()
 
 
 #: The property name a state is fed under. The model declares STABILITY on
@@ -88,16 +121,14 @@ def open_session(model_path: str, captures: Sequence[Any], *,
 
     Split out of `run` so the other stages of the loop -- `hypothesize`, `plan`
     and whatever the engine adds -- can be asked about the same session `run`
-    judges, rather than a second one built to look like it. `captures` must not
-    be empty; `run` says what an empty series means before it gets here.
+    judges, rather than a second one built to look like it. A series `unusable`
+    refuses raises `CaptureUnusable`, after the model is read, so a broken model
+    is still reported as broken first.
     """
-    api = _engine()
-    session = api.EngineSession()
-    try:
-        session.load_model(model_path)
-    except Exception as problem:            # yaml errors are not ValueError
-        raise ModelUnreadable(f"{model_path} could not be loaded as a domain model: "
-                              f"{type(problem).__name__}: {problem}") from None
+    session = _loaded(model_path)
+    refusal = unusable(captures)
+    if refusal:
+        raise CaptureUnusable(refusal)
 
     latest = captures[-1]
     series = _series(captures)
@@ -150,15 +181,13 @@ def run(model_path: str, captures: Sequence[Any], *,
     does not run at is how a burn-in silently never completes.
     """
     api = _engine()
-    if not captures:
+    refusal = unusable(captures)
+    if refusal:
         # The model is still read first, so a broken one is reported as broken
-        # rather than as an empty series.
-        open_session(model_path, [_EMPTY], interval_seconds=interval_seconds)
+        # rather than as an unusable series.
+        _loaded(model_path)
         return {"exit_code": x.INCOMPLETE, "findings": [], "not_checked": [],
-                "engine": None,
-                "could_not_run": "no captures were supplied, and an empty series "
-                                 "reports the same as a complete one about an "
-                                 "organisation that never changed"}
+                "engine": None, "could_not_run": refusal}
 
     session = open_session(model_path, captures, interval_seconds=interval_seconds)
     series = _series(captures)
