@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.4] — 2026-09-27
+
 ### Changed
 
 - **A role is declared only where an axiom reads it.** The model declared a
