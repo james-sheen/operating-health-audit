@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.5] — 2026-09-27
+
 ### Fixed
 
 - **A capture is fed at the time it was taken.** The feeder fed every series as
