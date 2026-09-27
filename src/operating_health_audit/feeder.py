@@ -37,9 +37,10 @@ class ModelUnreadable(ValueError):
 
 
 class CaptureUnusable(ValueError):
-    """A series this package cannot feed: empty, or holding an item that is not
-    a loaded capture or is one with no units. Raised by `open_session`; `run`
-    answers the same sentence as `could_not_run` instead of raising."""
+    """A series this package cannot feed: empty, holding an item that is not a
+    loaded capture or is one with no units, or carrying a reading the engine
+    refuses. Raised by `open_session`; `run` answers the same sentence as
+    `could_not_run` instead of raising."""
 
 
 #: What `run` says when it is handed no captures at all.
@@ -147,9 +148,24 @@ def open_session(model_path: str, captures: Sequence[Any], *,
     # number (FINDINGS F1, filed upstream as issue #14). From engine 0.2.11 the
     # session keeps a reading of a property the model declares `type: STATE` as
     # a state, so the workaround is gone and the floor names that release.
+    #
+    # A READING THE ENGINE REFUSES IS REFUSED HERE, IN THE ENGINE'S WORDS. A word
+    # where the model declares a number -- `N/A` in a JSON capture's values --
+    # raised out of `add_observations` uncaught, and a traceback exits 1, which
+    # this package's contract reads as findings. Only that refusal is caught: it
+    # is a `ValueError` naming the reading it refused, `<unit>.<quantity>: ...`,
+    # which is how the engine reports a number that is not one and a state that
+    # is None. Anything else -- a series of the wrong shape, a failure in a
+    # store -- is not a refused reading and propagates as it did.
     for (entity, indicator), values in series.items():
-        session.add_observations(entity, indicator, values,
-                                 interval_seconds=interval_seconds)
+        try:
+            session.add_observations(entity, indicator, values,
+                                     interval_seconds=interval_seconds)
+        except ValueError as refused:
+            if type(refused) is not ValueError or \
+                    not str(refused).startswith(f"{entity}.{indicator}: "):
+                raise
+            raise CaptureUnusable(str(refused)) from None
     return session
 
 
@@ -189,7 +205,11 @@ def run(model_path: str, captures: Sequence[Any], *,
         return {"exit_code": x.INCOMPLETE, "findings": [], "not_checked": [],
                 "engine": None, "could_not_run": refusal}
 
-    session = open_session(model_path, captures, interval_seconds=interval_seconds)
+    try:
+        session = open_session(model_path, captures, interval_seconds=interval_seconds)
+    except CaptureUnusable as refused:     # a reading the engine refused, by name
+        return {"exit_code": x.INCOMPLETE, "findings": [], "not_checked": [],
+                "engine": None, "could_not_run": str(refused)}
     series = _series(captures)
     envelope = api.check(session)
     payload = envelope.to_dict() if hasattr(envelope, "to_dict") else dict(envelope)

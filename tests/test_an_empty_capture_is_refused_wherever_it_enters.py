@@ -41,6 +41,17 @@ def _nameless(*positions: int) -> dict:
     return raw
 
 
+def _with_value(export, unit: str, quantity: str, value):
+    """The shipped capture with one unit reporting `value` for one quantity."""
+    from operating_health_audit import capture
+
+    return capture.Export(complete=True, captured_at=export.captured_at, points=tuple(
+        capture.Reading(name=p.name, unit_type=p.unit_type, path=p.path, state=p.state,
+                        edges=p.edges,
+                        values={**p.values, quantity: value} if p.name == unit else p.values)
+        for p in export.points))
+
+
 # --- the loader ---------------------------------------------------------------
 
 class TestTheLoaderRefusesACaptureOfNothing:
@@ -183,13 +194,10 @@ class TestTheCsvReaderRefusesACellThatIsNotANumber:
         """The premise of letting `nan` through, pinned: the engine answers it
         `undefined_for_values` rather than judging it. Should that stop being
         true, this reader has to start refusing it."""
-        from operating_health_audit import capture, feeder
+        from operating_health_audit import feeder
 
-        points = tuple(capture.Reading(
-            name=p.name, unit_type=p.unit_type, path=p.path, state=p.state, edges=p.edges,
-            values={**p.values, "turnover_pct": float("nan")} if p.name == "dept-sales" else p.values)
-            for p in export.points)
-        out = feeder.run(str(MODEL), [capture.Export(points=points, complete=True)])
+        out = feeder.run(str(MODEL), [_with_value(export, "dept-sales", "turnover_pct",
+                                                  float("nan"))])
         declined = {(d.get("axiom"), d.get("reason")) for d in out["not_checked"]
                     if d.get("entity_id") == "dept-sales" and "turnover" in str(d)}
         assert ("BOUNDEDNESS", "undefined_for_values") in declined, declined
@@ -292,6 +300,56 @@ class TestPresenceRefusesAnExportOfNothing:
         assert "could_not_run" not in out
         absent = [f for f in out["findings"] if f["kind"] == "declared_absent"]
         assert len(absent) == len(declaration.points) - 1
+
+
+class TestAReadingTheEngineRefusesIsRefusedInItsWords:
+    """A word where the model declares a number reached the engine, whose
+    refusal escaped as a traceback exiting 1 -- read as findings."""
+
+    @pytest.mark.parametrize("value", ["N/A", None], ids=["a word", "null"])
+    def test_run_answers_could_not_run_with_the_engines_message(self, export, value) -> None:
+        from operating_health_audit import feeder
+
+        series = [_with_value(export, "dept-sales", "turnover_pct", value)]
+        out = feeder.run(str(MODEL), series)
+        assert out["exit_code"] == 2 and out["findings"] == []
+        assert out["could_not_run"].startswith(f"dept-sales.turnover_pct: reading {value!r}")
+        with pytest.raises(feeder.CaptureUnusable) as refused:
+            feeder.open_session(str(MODEL), series)
+        assert str(refused.value) == out["could_not_run"]
+
+    def test_a_numeric_string_is_still_a_number(self, export) -> None:
+        """The other direction: the engine casts `"3.5"`, so nothing is refused."""
+        from operating_health_audit import feeder
+
+        out = feeder.run(str(MODEL), [_with_value(export, "dept-sales", "turnover_pct", "3.5")])
+        assert "could_not_run" not in out and out["findings"]
+
+    @pytest.mark.parametrize("error", [
+        ValueError("add_observations got a mix of bare readings and (timestamp, value) pairs"),
+        RuntimeError("the store is gone")], ids=["a ValueError naming no reading", "another error"])
+    def test_only_the_refusal_of_a_reading_is_caught(self, export, monkeypatch, error) -> None:
+        """A failure that is not the engine refusing the reading being fed is not
+        this package's to translate, and propagates as it did."""
+        from arbiter_engine import api
+
+        from operating_health_audit import feeder
+
+        def fails(*_args, **_kwargs):
+            raise error
+
+        monkeypatch.setattr(api.EngineSession, "add_observations", fails)
+        with pytest.raises(type(error)) as raised:
+            feeder.run(str(MODEL), [export])
+        assert not isinstance(raised.value, feeder.CaptureUnusable)
+
+    def test_detect_answers_in_the_engines_words(self, tmp_path) -> None:
+        raw = _raw()
+        unit = next(u for u in raw["units"] if u["name"] == "dept-sales")
+        unit["values"]["turnover_pct"] = "N/A"
+        code, out = _run("detect", MODEL, _write(tmp_path, "worded.json", raw))
+        assert (code, out["exit_code"]) == (2, 2)
+        assert out["could_not_run"].startswith("dept-sales.turnover_pct: reading 'N/A'")
 
 
 def test_regression_refuses_two_exports_of_nothing() -> None:

@@ -32,6 +32,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   *not applicable*, which blank already says, or *not available*, a reading that
   should exist and does not -- only the exporter knows which. `nan` and `inf`
   still read, because the engine declines a non-finite reading by name.
+- **A reading the engine refuses is refused here, in the engine's words.** A
+  JSON capture carrying a word where the model declares a number -- `N/A` for
+  `turnover_pct` -- reached the engine, and its refusal escaped as a traceback
+  exiting 1. `detect` and `feeder.run` now answer `could_not_run` with the
+  engine's own message, and `open_session` raises `CaptureUnusable` carrying it.
+  Only that refusal is caught, a `ValueError` naming the reading being fed; any
+  other failure propagates as before.
 
 ## [0.1.2] — 2026-09-26
 
