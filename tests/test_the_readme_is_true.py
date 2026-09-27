@@ -39,6 +39,21 @@ def test_the_day_one_finding_count_is_what_the_readme_says() -> None:
         f"the README says {claimed.group(1)} and the run produces {counted}")
 
 
+def test_the_captures_the_coupling_waits_for_are_the_engines() -> None:
+    """The README says the one coupling declines until a number of monthly
+    captures exist. The number is the ENGINE's, not this package's -- one more
+    than the paired changes it fits a gain from -- so it is read off the floor
+    the engine reports, and a release that moved the floor fails here."""
+    from arbiter_engine import api
+    from operating_health_audit import capture, feeder
+
+    claimed = re.search(r"until (\d+) monthly captures", README)
+    assert claimed, "the README no longer says when the coupling can be fitted"
+    session = feeder.open_session(str(MODEL), [capture.load(CAPTURE)])
+    proposed = api.model_describe(session).to_dict()["model"]["proposed_transitions"]
+    assert int(claimed.group(1)) == proposed["checked"]["sample_floor"] + 1
+
+
 def test_the_breakdown_the_readme_gives_is_the_breakdown_measured() -> None:
     """Four exceeded, three warning, four bad states -- asserted separately,
     because a total can stay right while its parts move."""

@@ -11,15 +11,19 @@ nothing added for the test, so what passes here is what `detect` meets. The
 series is thirty monthly captures -- enough for every arm of the model to answer
 -- from the shipped fixture, whose numbers are invented and say so.
 
-The model declares what each stage reads, or declares on purpose that it does
-not: which way a failure travels (`hypothesize`), one lever an operator can
-pull (`file_action`), and when a case closes (`open_case`); no objective and no
-coupling, so `plan` and `learn` decline or come back empty, by name.
+The model declares what each stage reads: which way a failure travels
+(`hypothesize`), one lever an operator can pull and the rounds a plan may
+choose between (`file_action`, `plan`), one coupling with its number withheld
+(`learn`), and when a case closes (`open_case`). The coupling cannot be fitted
+from a real monthly series for ten years, so on this series `learn` declines by
+name, and a labelled-synthetic series of 121 captures shows the fit itself.
 
-The published names are read from where the engine keeps them: its top-level
-decline enum and one closed vocabulary per discipline. Both are deeper than the
-names the engine promises, and are imported anyway because the test's subject is
-exactly that promise -- a decline outside those sets is one no reader could
+Every decline is read by the engine's own walker, from every list the engine
+reports one under, and checked against the names it publishes. This file used
+to carry its own copy of that walk, reading two of those lists; the copy in the
+other domain read four. A refusal from the learn leg arrives under the one this
+copy did not read, so the check would have passed over exactly the stage this
+file now exercises. A decline outside the published names is one no reader could
 switch on.
 """
 
@@ -31,14 +35,12 @@ from pathlib import Path
 
 import pytest
 from arbiter_engine import api
-from arbiter_engine.subenvelope import VOCABULARIES
-from arbiter_engine.types import NotEvaluatedReason
+from arbiter_engine.subenvelope import (PUBLISHED_REASONS, declined_reasons,
+                                        unpublished_reasons)
 
 ROOT = Path(__file__).resolve().parents[1]
 MODEL = ROOT / "examples" / "operating.model.yaml"
 CAPTURE = ROOT / "examples" / "acme.capture.json"
-
-PUBLISHED = {reason.value for reason in NotEvaluatedReason}.union(*VOCABULARIES.values())
 
 #: A reporting month, the cadence the feeder assumes, and a fixed instant for
 #: the stages that file something and grade it later.
@@ -49,29 +51,6 @@ AT = datetime(2026, 9, 1)
 #: -- and that the series finds a breach on.
 LED = "dept-sales"
 LEADERS = {"exec-cro", "exec-vp-sales"}
-
-
-def _reasons(payload) -> list:
-    """Every decline reason anywhere in a payload, however deeply it is mounted."""
-    found = []
-
-    def walk(node):
-        if isinstance(node, dict):
-            for key, value in node.items():
-                if key in ("not_checked", "declines") and isinstance(value, list):
-                    found.extend(item.get("reason") for item in value
-                                 if isinstance(item, dict))
-                walk(value)
-        elif isinstance(node, list):
-            for item in node:
-                walk(item)
-
-    walk(payload)
-    return found
-
-
-def _unpublished(payload) -> list:
-    return sorted({r for r in _reasons(payload) if r not in PUBLISHED})
 
 
 def _series():
@@ -106,13 +85,13 @@ class TestEveryStageAnswersOrDeclinesByName:
 
     def test_sense(self, sensed):
         assert sensed["findings"], "a thirty-capture series of this fixture finds nothing"
-        assert _unpublished(sensed) == []
+        assert unpublished_reasons(sensed) == []
 
     def test_model(self, session):
         described = api.model_describe(session).to_dict()
         assert described["model"]["axiom_parameters"]["homeostasis_baseline_days"] == {
             "value": 3650, "source": "declared"}
-        assert _unpublished(described) == []
+        assert unpublished_reasons(described) == []
 
     def test_hypothesize(self, session, sensed):
         """The declared direction reaches the ranking: a breach on a department
@@ -123,39 +102,134 @@ class TestEveryStageAnswersOrDeclinesByName:
         candidates = payload["hypothesis"]["candidates"]
         assert {c["cause"] for c in candidates} == LEADERS
         assert all(c["posterior"] is None for c in candidates)
-        assert _unpublished(payload) == []
+        assert unpublished_reasons(payload) == []
 
     def test_the_missing_strength_is_named(self, session):
         """`cpt_missing` is the true answer while nobody has a strength to give,
         and the inference the ranking rests on says so by name."""
         payload = api.infer(session, LED).to_dict()
-        assert "cpt_missing" in _reasons(payload)
-        assert _unpublished(payload) == []
+        assert "cpt_missing" in declined_reasons(payload)
+        assert unpublished_reasons(payload) == []
 
     def test_the_ranking_says_why_it_has_no_number(self, session):
         """F10: the ranking carries the decline its inferences made, and each
         cause names its own. It was a strict xfail until the engine did."""
         payload = api.hypothesize(session, LED).to_dict()
-        assert "cpt_missing" in _reasons(payload)
+        assert "cpt_missing" in declined_reasons(payload)
         assert all(c["declined"] == ["cpt_missing"]
                    for c in payload["hypothesis"]["candidates"])
 
     def test_plan(self, session):
-        """The model declares one lever and no objective, and the lever names no
-        candidate values -- so the honest answer is a named refusal, and a plan
-        that declined nothing here would be claiming a search it had nothing to
-        rank."""
+        """The model declares an objective and the hiring rounds a plan may
+        choose between, so the plan ranks them. The rounds do not tie: a hire
+        is scored by how far it moves a department from its own HOMEOSTASIS
+        baseline, which is what the objective reads."""
         payload = api.plan(session).to_dict()
-        reasons = _reasons(payload)
-        assert {"no_objective", "no_candidates"} & set(reasons), reasons
-        assert _unpublished(payload) == []
+        leg = payload["plan"]
+        assert leg["ranked"] and leg["best"]
+        assert "no_objective" not in declined_reasons(payload)
+        assert len({c["objective"] for c in leg["candidates"]}) > 1, (
+            "every round scored the same; the lever moves nothing the objective reads")
+        assert any(f.startswith("imagined_homeostasis") and f.endswith(":headcount")
+                   for c in leg["candidates"] for f in c["findings"])
+        assert unpublished_reasons(payload) == []
 
     def test_learn(self, session):
-        """Nothing is coupled in this model, so there is no gain to propose; the
-        leg is present and empty rather than absent."""
+        """One coupling is declared, with its gain withheld, and thirty monthly
+        captures are twenty-nine changes: far below the 120 the engine fits a
+        gain from. So every edge it runs along declines `insufficient_samples`
+        by name, under `not_fitted` -- a list the copy this file used to carry
+        never read."""
         proposed = api.model_describe(session).to_dict()["model"]["proposed_transitions"]
-        assert isinstance(proposed, dict)
-        assert _unpublished(proposed) == []
+        assert proposed["fitted"] == []
+        assert proposed["checked"]["couplings_seen"] == len(DEPARTMENTS)
+        assert set(declined_reasons(proposed)) == {"insufficient_samples"}
+        assert unpublished_reasons(proposed) == []
+
+
+#: The four departments, each reporting into a division along the edge the
+#: model's one coupling runs on.
+DEPARTMENTS = ("dept-sales", "dept-marketing", "dept-engineering", "dept-support")
+
+#: Two waves of people moving, ORTHOGONAL and of mean zero over four months.
+#: The two departments of a division get one each, so neither's movement can be
+#: mistaken for the other's and the gain a fit should recover is exactly one.
+WAVES = ((2, -2), (1, 1, -1, -1))
+
+
+def _coupled(count):
+    """A LABELLED-SYNTHETIC series, not an organisation's history.
+
+    The shipped capture held still, except that each department's headcount
+    moves by one of two fixed waves every month and its division's total moves
+    by the same people. Built so the one coupling the model declares has an
+    answer known in advance -- a department's hire adds exactly one to its
+    division's total -- and so nothing else in it is evidence of anything.
+    """
+    from operating_health_audit import capture
+
+    baseline = capture.load(CAPTURE)
+    parent = {p.name: p.edges.get("reports_to") for p in baseline.points
+              if p.unit_type == "Department"}
+    wave = {d: WAVES[i % 2]
+            for division in sorted(set(parent.values()))
+            for i, d in enumerate(sorted(n for n in parent if parent[n] == division))}
+
+    def moved(unit, month):
+        return sum(wave[unit][j % len(wave[unit])] for j in range(month))
+
+    series = []
+    for month in range(count):
+        points = []
+        for point in baseline.points:
+            values = dict(point.values)
+            if point.name in parent:
+                values["headcount"] = point.values["headcount"] + moved(point.name, month)
+            elif point.unit_type == "Division":
+                values["total_headcount"] = point.values["total_headcount"] + sum(
+                    moved(d, month) for d, division in parent.items()
+                    if division == point.name)
+            points.append(capture.Reading(
+                name=point.name, unit_type=point.unit_type, path=point.path,
+                values=values, state=point.state, edges=dict(point.edges)))
+        series.append(capture.Export(points=tuple(points), complete=True,
+                                     source=f"synthetic, month {month}"))
+    return series
+
+
+def _proposed(series):
+    from operating_health_audit import feeder
+
+    session = feeder.open_session(str(MODEL), series)
+    return api.model_describe(session).to_dict()["model"]["proposed_transitions"]
+
+
+class TestTheCouplingIsFittedOnlyFromEnoughChanges:
+    """The learn stage's mechanism, shown on a series built for it. The floor is
+    the engine's -- 120 paired changes -- and at a monthly cadence that is ten
+    years, so a real series here would decline for that long."""
+
+    def test_one_capture_short_of_the_floor_declines_by_name(self):
+        proposed = _proposed(_coupled(120))
+        assert proposed["fitted"] == []
+        assert set(declined_reasons(proposed)) == {"insufficient_samples"}
+
+    def test_at_the_floor_every_edge_is_fitted_and_nothing_is_written(self):
+        before = MODEL.read_bytes()
+        proposed = _proposed(_coupled(121))
+        assert MODEL.read_bytes() == before, "a proposal was written into the model"
+        assert declined_reasons(proposed) == []
+        fitted = {f["edge"].split("->")[0]: f for f in proposed["fitted"]}
+        assert sorted(fitted) == sorted(DEPARTMENTS)
+        for proposal in fitted.values():
+            low, high = proposal["interval"]
+            assert proposal["n"] == 120
+            assert proposal["gain"] == pytest.approx(1.0)
+            assert low < 1.0 < high
+            assert proposal["response_model"] == "step"
+            # No record of what happened to replay against: a refusal carrying
+            # its reason, never a zero.
+            assert proposal["replay"]["status"] == "replay_unavailable"
 
 
 def _hire(session, people=10):
@@ -178,7 +252,7 @@ class TestAnActionIsFiledAndGradedAgainstTheNextCapture:
         before = session.entities[LED].properties["headcount"]
         payload = _hire(session)
         assert payload["execution"]["checked"]["pairs_filed"] == 1
-        assert _unpublished(payload) == []
+        assert unpublished_reasons(payload) == []
 
         later = AT + MONTH
         with api.as_of(later):
@@ -203,7 +277,7 @@ class TestACaseOpensOnAFindingAndResolves:
                                    basis="a critical error rate at the September review")
             api.check(session)
         payload = opened.to_dict()
-        assert _unpublished(payload) == []
+        assert unpublished_reasons(payload) == []
         case_id = payload["case"]["case_id"]
         assert (payload["case"]["severity"], payload["case"]["consecutive_checks"]) == (
             "warning", 2)
@@ -225,18 +299,42 @@ def test_the_stage_report_matches_what_the_run_did(session):
     stage reads -- and each claim is checked against what the stage then did."""
     stages = {name: row["declared"] for name, row in
               api.model_describe(session).to_dict()["model"]["stages"].items()}
-    assert stages == {"check": True, "hypothesize": True, "plan": False,
-                      "act": True, "learn": False, "case": True}
+    assert stages == {"check": True, "hypothesize": True, "plan": True,
+                      "act": True, "learn": True, "case": True}
     assert api.hypothesize(session, LED).to_dict()["hypothesis"]["candidates"]
-    assert "no_objective" in _reasons(api.plan(session).to_dict())
+    assert api.plan(session).to_dict()["plan"]["ranked"]
     assert _hire(_fresh())["execution"]["checked"]["pairs_filed"] == 1
-    assert not api.model_describe(session).to_dict()["model"]["proposed_transitions"].get(
-        "fitted")
+    learned = api.model_describe(session).to_dict()["model"]["proposed_transitions"]
+    assert not learned["fitted"] and "insufficient_samples" in declined_reasons(learned)
     assert "case_id" in api.open_case(_fresh(), "proc-sales-cycle",
                                       "error_rate_pct").to_dict()["case"]
 
 
 def test_the_vocabularies_are_not_empty():
     """Before believing a negative, prove the probe can produce one."""
-    assert "insufficient_samples" in PUBLISHED and "no_objective" in PUBLISHED
-    assert _unpublished({"not_checked": [{"reason": "made_up_here"}]}) == ["made_up_here"]
+    assert "insufficient_samples" in PUBLISHED_REASONS
+    assert "no_objective" in PUBLISHED_REASONS
+    assert unpublished_reasons({"not_checked": [{"reason": "made_up_here"}]}) == [
+        "made_up_here"]
+
+
+def test_a_refusal_the_learn_leg_names_wrongly_is_caught(session):
+    """The incident the shared walker exists for. The learn leg's real answer,
+    with one unpublished reason put into `not_fitted`: the walk this file used
+    to carry read only `not_checked` and `declines`, and would pass it."""
+    proposed = api.model_describe(session).to_dict()["model"]["proposed_transitions"]
+    doctored = dict(proposed, not_fitted=list(proposed["not_fitted"]) + [
+        {"edge": "dept-sales->div-commercial", "reason": "made_up_here"}])
+    assert unpublished_reasons(doctored) == ["made_up_here"]
+
+    def two_lists(node):
+        if isinstance(node, dict):
+            return [item.get("reason") for key, value in node.items()
+                    if key in ("not_checked", "declines") and isinstance(value, list)
+                    for item in value if isinstance(item, dict)] + [
+                reason for value in node.values() for reason in two_lists(value)]
+        if isinstance(node, list):
+            return [reason for item in node for reason in two_lists(item)]
+        return []
+
+    assert "made_up_here" not in two_lists(doctored)

@@ -6,6 +6,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **A plan ranks the hiring rounds.** The model declares an objective,
+  `expected_findings`, and three illustrative rounds for `add_headcount`, so
+  `plan` ranks them instead of declining `no_objective`. The rounds do not tie:
+  a hire is scored by how far it moves a department from its own HOMEOSTASIS
+  baseline.
+- **One coupling, with its gain withheld.** A department's `headcount` into its
+  division's `total_headcount`, along `reports_to`, as `gain: estimate`. The
+  engine fits a gain from 120 paired changes -- ten years of monthly captures --
+  so on any series here the learn stage declines `insufficient_samples` by name.
+  The loop test shows the fit on a labelled-synthetic series of 121 captures,
+  and nothing is ever written into the model.
+
+### Changed
+
+- **The engine floor is 0.2.15**, forced by a failing control: the loop test
+  reads every decline through the engine's own walker instead of its own copy,
+  which read two of the four lists a decline is reported under and so could not
+  see the learn stage's. On 0.2.14 that test cannot be collected.
+
 ### Fixed
 
 - **A capture of nothing is refused wherever it enters.** `capture.load`

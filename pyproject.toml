@@ -57,7 +57,15 @@ dependencies = ["presence-audit>=0.1.13,<0.3"]
 # -- `api.open_case` does not exist there (AttributeError) and the model
 # description has no `stages` (KeyError). The act leg passes on 0.2.12, which is
 # where `file_action` and a parameter's `tolerance:` arrived.
-detect = ["arbiter-engine>=0.2.13,<0.3"]
+#
+# THE FLOOR IS 0.2.15, FORCED BY A FAILING CONTROL A THIRD TIME. The loop
+# scenario reads every decline through the engine's own walker --
+# `subenvelope.declined_reasons` and `unpublished_reasons` -- instead of the
+# copy it carried, which read two of the four lists a decline is reported
+# under and so could not see the learn stage's. Measured against 0.2.14: the
+# loop test cannot be collected (ImportError on `PUBLISHED_REASONS`), and the
+# other 187 tests pass there, the model's new coupling and objective included.
+detect = ["arbiter-engine>=0.2.15,<0.3"]
 
 [project.urls]
 Homepage = "https://github.com/james-sheen/operating-health-audit"

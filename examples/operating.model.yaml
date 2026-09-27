@@ -118,6 +118,33 @@ domain:
       source_type: Department
       target_type: Division
       edge_direction: causal
+      # HOW MUCH A FIGURE CARRIES along the same edge, which is the other thing
+      # the sentence above says: a division's headcount is its departments'
+      # headcount, so a department's hire moves its division's total. Declared
+      # so the learn stage has one coupling to answer about, and with the
+      # number WITHHELD: `gain: estimate` asks the engine to fit it and report a
+      # proposal, and nothing writes one back into this file.
+      #
+      # IT CANNOT BE FITTED FROM A REAL SERIES FOR TEN YEARS. The engine fits a
+      # gain from at least 120 paired monthly changes -- 121 captures -- so until
+      # then the stage answers `insufficient_samples` by name, which is the true
+      # answer. The loop test proves the mechanism on a labelled-synthetic series
+      # of 121 captures instead, built so the answer is known.
+      #
+      # A step, with no delay: a hire is in the division's total at the same
+      # month-end, so there is no time course to declare beyond that.
+      temporal:
+        propagation_delay_s: 0
+        time_constant_s: 0
+        response_model: step
+      transition:
+        from: headcount
+        to: total_headcount
+        gain: estimate
+        source: >-
+          illustrative -- the organisation is invented, and so is the claim that
+          its divisions count their departments' people; no count stands behind
+          a number, which is why none is written
 
   # THE ONE LEVER THIS MODEL DECLARES, so an action somebody takes can be filed
   # and graded (`file_action`). Adding people to a department is recorded as
@@ -134,11 +161,26 @@ domain:
           type: number
           entity_property: headcount
           tolerance: 2
+          # The hiring rounds a plan may choose between, invented like every
+          # number here. A plan scores each against the objective below.
+          candidates: [5, 10, 20]
       effect: add
       source: >-
         a hiring decision recorded as executed; the headcount a department reports
         moves by the people added, give or take the joiners and leavers between the
         decision and the capture
+  # WHAT A PLAN PURSUES: the fewest findings the model expects afterwards.
+  # Declared so `plan` ranks the hiring rounds above instead of declining
+  # `no_objective`. MEASURED before it was written: the rounds do not tie.
+  # `headcount` carries HOMEOSTASIS, so a hire is scored by how far it moves a
+  # department from its own baseline. Five people leave the two larger
+  # departments alone and raise an imagined warning in the two smaller ones;
+  # the largest round raises an anomaly there. So the plan ranks doing nothing
+  # first, tied with five people into a large department. On invented numbers
+  # that is a demonstration of the mechanism, not advice about anybody's hiring.
+  planning:
+    objective: expected_findings
+
   # WHEN A CASE CLOSES. A case opens on a finding and resolves after this many
   # checks in a row that looked at its indicator and found nothing at or above
   # this severity.

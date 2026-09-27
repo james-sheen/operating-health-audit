@@ -6,11 +6,14 @@ run, not a reading of a constant — the first draft of this document was writte
 from `types.AXIOM_MINIMUMS` and was wrong in both directions. It was measured
 first on 0.1.14, when one arm could never answer at this cadence; the table was
 re-measured when 0.2.11 made it answer, and several of its old rows had moved.
+Re-measured on 2026-09-27 against 0.2.15 and presence-audit 0.2.1, with the
+model's coupling and planning objective declared: every row is unchanged.
 
 ## The one-line answer
 
 **Eleven findings from a single capture.** The audit is useful on day one. Three
 arms need a history, and every one of them answers by the thirtieth capture.
+One stage of the loop does not: the coupling's gain waits for the 121st.
 
 ## The measured table
 
@@ -95,6 +98,23 @@ declares the windows' ten years:
 
 Measured: 21 declines through the twenty-ninth capture, **none at the thirtieth**
 — the axiom's own thirty-sample floor is now the only thing it waits for.
+
+## The coupling's gain waits for the 121st capture
+
+The model declares one coupling -- a department's headcount into its
+division's total -- and withholds the number, so the engine may fit it. It fits
+a gain from 120 paired changes and no fewer, which at one capture a month is
+121 captures: ten years. Until then every edge the coupling runs along declines
+`insufficient_samples`, by name, and nothing is fitted.
+
+That is the true answer, and it is not a burn-in in the sense of the table:
+nothing in this model can bring it closer, and nothing should. Lowering a
+statistical floor on invented data would produce a gain with a decimal point
+and no series behind it. The loop test shows the mechanism instead, on a
+series labelled synthetic and built so the answer is known: at 120 captures all
+four edges decline, at 121 all four are fitted, each at a gain of 1.0 -- a
+department's hire adds one to its division's total -- with its interval, and
+with the replay the engine could not run because no record exists to replay.
 
 ## The kill criterion, and how it resolved
 
