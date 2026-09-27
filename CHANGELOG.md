@@ -23,6 +23,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and now refuses, on the command line and on the API alike: an export holding
   no units cannot say which units are absent. A capture of one unit is still
   compared, and the rest are reported absent as before.
+- **A CSV cell that is not a number is refused by its line and column.**
+  `capture` raised an uncaught `ValueError` on a cell such as `N/A`, which exits
+  1 and reads as findings; it now answers `could_not_run`, as it does for a row
+  with more cells than the header, which raised `AttributeError`. `N/A`, `n/a`
+  and `-` are refused rather than read as the empty cell, by choice: blank is the
+  one spelling of an absent quantity this reader documents, and `N/A` can mean
+  *not applicable*, which blank already says, or *not available*, a reading that
+  should exist and does not -- only the exporter knows which. `nan` and `inf`
+  still read, because the engine declines a non-finite reading by name.
 
 ## [0.1.2] — 2026-09-26
 

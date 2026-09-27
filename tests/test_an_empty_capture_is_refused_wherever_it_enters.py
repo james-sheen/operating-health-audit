@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import copy
 import json
+import math
 import subprocess
 import sys
 
@@ -124,6 +125,90 @@ class TestTheCsvReaderRefusesARowWithNoId:
         path = tmp_path / "ok.csv"
         path.write_text("id,type,headcount\ndept-sales,Department,40\n")
         assert [p.name for p in capture.from_csv(path).points] == ["dept-sales"]
+
+
+class TestTheCsvReaderRefusesACellThatIsNotANumber:
+    """`float` raised on one, uncaught, and a traceback exits 1 -- which this
+    package's contract reads as findings about the organisation."""
+
+    @staticmethod
+    def _csv(tmp_path, *rows):
+        path = tmp_path / "wide.csv"
+        path.write_text("\n".join(("id,type,headcount,turnover_pct",) + rows) + "\n")
+        return path
+
+    @pytest.mark.parametrize("token", ["N/A", "n/a", "-", "unknown"])
+    def test_a_word_where_a_number_belongs_is_refused_by_line_and_column(
+            self, tmp_path, token) -> None:
+        """`N/A` is refused, not read as the empty cell: it can mean *not
+        applicable* or *not available*, and only the exporter knows which."""
+        from operating_health_audit import capture
+
+        path = self._csv(tmp_path, f"dept-sales,Department,40,{token}")
+        with pytest.raises(capture.CaptureError) as refused:
+            capture.from_csv(path)
+        assert (f"line 2, column `turnover_pct` ({token!r}) is not a number"
+                in str(refused.value))
+
+    def test_every_such_cell_is_named(self, tmp_path) -> None:
+        from operating_health_audit import capture
+
+        path = self._csv(tmp_path, "dept-sales,Department,N/A,N/A",
+                         "dept-ops,Department,9,-")
+        with pytest.raises(capture.CaptureError) as refused:
+            capture.from_csv(path)
+        message = str(refused.value)
+        for where in ("line 2, column `headcount`", "line 2, column `turnover_pct`",
+                      "line 3, column `turnover_pct`"):
+            assert where in message
+        assert "are not numbers" in message
+
+    def test_blank_and_none_still_read_as_absent(self, tmp_path) -> None:
+        """The other direction. The empty cell is the documented absence, and
+        `None` is how a writer spells one."""
+        from operating_health_audit import capture
+
+        path = self._csv(tmp_path, "dept-sales,Department,40,", "dept-ops,Department,None,3")
+        read = {p.name: dict(p.values) for p in capture.from_csv(path).points}
+        assert read == {"dept-sales": {"headcount": 40.0}, "dept-ops": {"turnover_pct": 3.0}}
+
+    def test_nan_and_inf_still_read(self, tmp_path) -> None:
+        """`float` takes them, and the next test holds why they are let through."""
+        from operating_health_audit import capture
+
+        values = capture.from_csv(self._csv(tmp_path, "dept-sales,Department,nan,inf")).points[0].values
+        assert math.isnan(values["headcount"]) and math.isinf(values["turnover_pct"])
+
+    def test_the_engine_declines_a_non_finite_reading_by_name(self, export) -> None:
+        """The premise of letting `nan` through, pinned: the engine answers it
+        `undefined_for_values` rather than judging it. Should that stop being
+        true, this reader has to start refusing it."""
+        from operating_health_audit import capture, feeder
+
+        points = tuple(capture.Reading(
+            name=p.name, unit_type=p.unit_type, path=p.path, state=p.state, edges=p.edges,
+            values={**p.values, "turnover_pct": float("nan")} if p.name == "dept-sales" else p.values)
+            for p in export.points)
+        out = feeder.run(str(MODEL), [capture.Export(points=points, complete=True)])
+        declined = {(d.get("axiom"), d.get("reason")) for d in out["not_checked"]
+                    if d.get("entity_id") == "dept-sales" and "turnover" in str(d)}
+        assert ("BOUNDEDNESS", "undefined_for_values") in declined, declined
+
+    def test_a_row_with_more_cells_than_columns_is_refused_by_line(self, tmp_path) -> None:
+        """It raised AttributeError: the reader files the extra cells as a list."""
+        from operating_health_audit import capture
+
+        with pytest.raises(capture.CaptureError,
+                           match="the row on line 2 has more cells than the header has columns"):
+            capture.from_csv(self._csv(tmp_path, "dept-sales,Department,40,3,9,9"))
+
+    def test_the_capture_command_answers_could_not_run(self, tmp_path) -> None:
+        out_file = tmp_path / "out.json"
+        code, out = _run("capture", self._csv(tmp_path, "dept-sales,Department,40,N/A"),
+                         "--out", out_file)
+        assert (code, out["exit_code"]) == (2, 2)
+        assert "is not a number" in out["could_not_run"]
+        assert not out_file.exists()
 
 
 # --- the API ------------------------------------------------------------------

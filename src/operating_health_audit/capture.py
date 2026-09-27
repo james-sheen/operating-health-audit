@@ -224,17 +224,49 @@ def from_csv(path: str | Path, *, captured_at: str = "",
             f"{path}: the rows on {_positions(unnamed)} have no id, so nothing "
             f"declared can be matched to them, and dropping them would make the "
             f"capture smaller than the export")
+    # A CELL THAT IS NOT A NUMBER IS REFUSED BY ITS LINE AND COLUMN. `float`
+    # raised on one, uncaught, and a traceback exits 1 -- which this package's
+    # contract reads as FINDINGS, so a spreadsheet's `N/A` reported as a bad
+    # organisation. `N/A` is refused rather than read as the empty cell: blank
+    # is the one spelling of an absent quantity this reader documents, and
+    # `N/A` can mean *not applicable*, which blank already says, or *not
+    # available*, a reading that should exist and does not. Only the exporter
+    # knows which. `nan` and `inf` do read -- `float` takes them, and the
+    # engine declines a non-finite reading by name rather than judging it.
     supplied = dict(edges or {})
-    points = []
-    for _, row in rows:
+    points, overflowing, unreadable = [], [], []
+    for line, row in rows:
         ident = (row.get("id") or "").strip()
-        values = {k: float(v) for k, v in row.items()
-                  if k not in _IDENTITY and (v or "").strip() not in ("", "None")}
+        values = {}
+        for column, cell in row.items():
+            if column is None:          # the reader files cells past the last column here
+                overflowing.append(f"line {line}")
+                continue
+            text = (cell or "").strip()
+            if column in _IDENTITY or text in ("", "None"):
+                continue
+            try:
+                values[column] = float(text)
+            except ValueError:
+                unreadable.append(f"line {line}, column `{column}` ({text!r})")
         points.append(Reading(
             name=ident, unit_type=(row.get("type") or "").strip(),
             path=f"{path}#{ident}", values=values,
             state=(row.get("status") or "").strip() or None,
             edges=dict(supplied.get(ident) or {})))
+    if overflowing:
+        raise CaptureError(
+            f"{path}: the row on {_positions(overflowing)} has more cells than the "
+            f"header has columns, so the extra cells name no quantity"
+            if len(overflowing) == 1 else
+            f"{path}: the rows on {_positions(overflowing)} have more cells than "
+            f"the header has columns, so the extra cells name no quantity")
+    if unreadable:
+        what = "is not a number" if len(unreadable) == 1 else "are not numbers"
+        raise CaptureError(
+            f"{path}: {_positions(unreadable)} {what} -- blank a cell whose column "
+            f"does not apply to its row; the empty cell is the one way this reader "
+            f"is told a quantity is absent")
     return Export(points=tuple(points), complete=complete, source=str(path),
                   captured_at=captured_at or datetime.now(timezone.utc)
                   .replace(microsecond=0).isoformat().replace("+00:00", "Z"))
