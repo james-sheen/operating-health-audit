@@ -16,10 +16,24 @@ THE SILENCE GATE RUNS HERE. A model whose declarations the loader did not
 recognise judges nothing, and judging nothing composes clean unless something
 asks. Three accessors are read and reported: declarations dropped, properties
 fed that no indicator reads, and series nothing will ever consume.
+
+A CAPTURE IS FED AT THE TIME IT WAS TAKEN. This fed every series as bare values
+thirty days apart, ending at the clock, and never read `captured_at` -- so a
+skipped month, a review dated the 31st or a back-filled quarter all arrived as
+the same even ladder, and every window, baseline and learn-stage date the engine
+computed was computed from a spacing this module made up. Found by an outside
+verification that fed calendar months through here and got thirty-day answers.
+When every capture carries a stamp, the series is fed as `(captured_at, value)`
+pairs in stamp order and judged as of the latest one; when none does, it is
+spaced at `interval_seconds` and ends at the clock, as before. `run` reports
+which, under `timing`, because a declared cadence and a measured one read the
+same in every figure downstream.
 """
 
 from __future__ import annotations
 
+from contextlib import nullcontext
+from datetime import datetime
 from typing import Any, Mapping, Sequence
 
 from . import capture as _capture
@@ -58,7 +72,85 @@ def unusable(captures: Sequence[Any]) -> str | None:
     if not captures:
         return NO_CAPTURES
     return _capture.refusal([(f"captures[{position}]", item)
-                             for position, item in enumerate(captures)])
+                             for position, item in enumerate(captures)]) \
+        or _stamps(captures)[1]
+
+
+#: What `timing` names when the series was placed by each capture's own stamp.
+TIMED_BY_CAPTURE = "captured_at"
+#: And when no capture carried one, so the series was spaced at the interval.
+TIMED_BY_INTERVAL = "interval_seconds"
+
+
+def _stamps(captures: Sequence[Any]) -> tuple[list[datetime | None], str | None]:
+    """Each capture's `captured_at` as an instant, and why the series cannot be
+    placed in time, if it cannot.
+
+    ALL OR NONE. A series is placed by its stamps or spaced at the declared
+    interval; half of each is two clocks in one series, and which months landed
+    where would depend on which half was longer. The engine refuses the same mix
+    within one call, in a sentence about its own arguments; this says which
+    captures, in this package's words, before the engine is reached.
+    """
+    stamps: list[datetime | None] = []
+    unreadable: list[str] = []
+    for position, export in enumerate(captures):
+        raw = getattr(export, "captured_at", "") or ""
+        try:
+            stamps.append(_capture.instant(raw))
+        except ValueError:
+            stamps.append(None)
+            unreadable.append(f"captures[{position}] ({raw!r})")
+    if unreadable:
+        return stamps, (f"the captured_at of {_capture._positions(unreadable)} is not "
+                        f"a date and time, so the series cannot be placed in time; "
+                        f"give it in ISO 8601, such as 2026-01-31")
+    missing = [f"captures[{position}]" for position, when in enumerate(stamps)
+               if when is None]
+    if missing and len(missing) < len(stamps):
+        return stamps, (f"{_capture._positions(missing)} "
+                        f"{'carries' if len(missing) == 1 else 'carry'} no captured_at "
+                        f"and the rest do; a series is placed by its stamps or spaced "
+                        f"at the declared interval, never both -- stamp every capture "
+                        f"(`capture --captured-at`), or none")
+    first: dict[datetime, int] = {}
+    repeated: list[str] = []
+    for position, when in enumerate(stamps):
+        if when is None:
+            continue
+        if when in first:
+            repeated.append(f"captures[{first[when]}] and captures[{position}]")
+        else:
+            first[when] = position
+    if repeated:
+        return stamps, (f"{'; '.join(repeated)} are stamped the same instant, so one "
+                        f"unit would carry two readings at one time; a series holds "
+                        f"one capture per moment")
+    return stamps, None
+
+
+def timing(captures: Sequence[Any], *,
+           interval_seconds: float = 2_592_000.0) -> dict[str, Any]:
+    """How this series is placed in time, as `run` reports it.
+
+    `timed_by` is `captured_at` when every capture carries a stamp, and then the
+    first and last of them; it is `interval_seconds` when none does, and then the
+    interval the series was spaced at. A series `unusable` refuses has no timing.
+    """
+    stamps, _ = _stamps(captures)
+    if stamps and all(when is not None for when in stamps):
+        ordered = sorted(stamps)
+        return {"timed_by": TIMED_BY_CAPTURE,
+                "first": ordered[0].isoformat(), "last": ordered[-1].isoformat()}
+    return {"timed_by": TIMED_BY_INTERVAL, "interval_seconds": interval_seconds}
+
+
+def _latest_stamp(captures: Sequence[Any]) -> datetime | None:
+    """The instant a stamped series is judged at: its latest capture."""
+    stamps, _ = _stamps(captures)
+    if stamps and all(when is not None for when in stamps):
+        return max(stamps)
+    return None
 
 
 def _loaded(model_path: str) -> Any:
@@ -106,6 +198,17 @@ def _fed(point: Any) -> dict[str, Any]:
     return fed
 
 
+def _positioned(captures: Sequence[Any], unit: str,
+                indicator: str) -> list[tuple[int, Any]]:
+    """`(position, value)` for every capture in which `unit` reported `indicator`."""
+    out = []
+    for position, export in enumerate(captures):
+        for point in getattr(export, "points", ()) or ():
+            if point.name == unit and indicator in _fed(point):
+                out.append((position, _fed(point)[indicator]))
+    return out
+
+
 def _series(captures: Sequence[Any]) -> dict[tuple[str, str], list[Any]]:
     """Every (unit, quantity) the captures report, in capture order."""
     series: dict[tuple[str, str], list[Any]] = {}
@@ -130,6 +233,16 @@ def open_session(model_path: str, captures: Sequence[Any], *,
     refusal = unusable(captures)
     if refusal:
         raise CaptureUnusable(refusal)
+
+    # IN THE ORDER THEY WERE TAKEN, when they say. The latest capture supplies
+    # the units and their current values, and the latest by stamp is the one
+    # that is -- whatever order the files were named on a command line in.
+    stamps, _ = _stamps(captures)
+    timed = all(when is not None for when in stamps)
+    if timed:
+        order = sorted(range(len(captures)), key=lambda position: stamps[position])
+        captures = [captures[position] for position in order]
+        stamps = [stamps[position] for position in order]
 
     latest = captures[-1]
     series = _series(captures)
@@ -158,6 +271,13 @@ def open_session(model_path: str, captures: Sequence[Any], *,
     # is None. Anything else -- a series of the wrong shape, a failure in a
     # store -- is not a refused reading and propagates as it did.
     for (entity, indicator), values in series.items():
+        if timed:
+            # Paired with the stamp of the capture each came from. A unit absent
+            # from one month contributes no reading at that month's instant,
+            # where a ladder would have closed the gap and moved every earlier
+            # reading a month later than it was taken.
+            values = [(stamps[position], value) for position, value
+                      in _positioned(captures, entity, indicator)]
         try:
             session.add_observations(entity, indicator, values,
                                      interval_seconds=interval_seconds)
@@ -211,8 +331,19 @@ def run(model_path: str, captures: Sequence[Any], *,
         return {"exit_code": x.INCOMPLETE, "findings": [], "not_checked": [],
                 "engine": None, "could_not_run": str(refused)}
     series = _series(captures)
-    envelope = api.check(session)
-    payload = envelope.to_dict() if hasattr(envelope, "to_dict") else dict(envelope)
+    # JUDGED AS OF THE LATEST CAPTURE. A ladder ends at the clock, so its latest
+    # reading is always "now"; a stamped series ends when it was taken, and read
+    # at the wall clock its windows would slide away from it by however long ago
+    # that was -- the same files judged differently on every day they were run.
+    judged = _latest_stamp(captures)
+    with api.as_of(judged) if judged is not None else nullcontext():
+        envelope = api.check(session)
+        payload = envelope.to_dict() if hasattr(envelope, "to_dict") else dict(envelope)
+        rankings: dict[str, Mapping[str, Any]] = {}
+        for finding in payload.get("findings", []):
+            unit = finding.get("entity_id")
+            if unit and unit not in rankings:
+                rankings[unit] = ranking(api, session, unit)
 
     dropped = session.dropped_declarations()
     kinds = [f.get("type") or f.get("kind") or "unclassified"
@@ -222,19 +353,16 @@ def run(model_path: str, captures: Sequence[Any], *,
         kinds.append("model_not_read")
 
     # ONE RANKING PER UNIT, beside each of its findings. Asked once per unit
-    # because the verb answers about the unit, whichever of its readings fired.
-    rankings: dict[str, Mapping[str, Any]] = {}
-    findings = []
-    for finding in payload.get("findings", []):
-        unit = finding.get("entity_id")
-        if unit and unit not in rankings:
-            rankings[unit] = ranking(api, session, unit)
-        findings.append({**finding, "ranking": rankings.get(unit)})
+    # because the verb answers about the unit, whichever of its readings fired,
+    # and asked above, inside the same clock the check was read at.
+    findings = [{**finding, "ranking": rankings.get(finding.get("entity_id"))}
+                for finding in payload.get("findings", [])]
 
     return {
         "exit_code": x.code_for(kinds),
         "captures_fed": len(captures),
         "series_fed": len(series),
+        "timing": timing(captures, interval_seconds=interval_seconds),
         "findings": findings,
         "not_checked": payload.get("not_checked", []),
         "checked": payload.get("checked", {}),

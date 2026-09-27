@@ -139,6 +139,21 @@ had refused an empty file from the first release; `load` never learned it. Found
 by an outside verification that ran the API, which read the command line as
 unaffected -- it was not. Every door now refuses, in one sentence.
 
+## In this package, at 0.1.4
+
+**F12. Every capture was re-timed.** The feeder fed each series as bare values
+thirty days apart, ending at the clock, and never read `captured_at`. So a
+skipped month, a review dated the 31st and a back-filled quarter all reached the
+engine as the same even ladder, and every window, baseline and learn-stage date
+it computed was computed from a spacing this package made up. Found by an
+outside verification that fed calendar months through the feeder and got
+thirty-day answers -- the reason this package's own loop test had passed on an
+engine that could not fit a calendar-monthly series at all. **Reproducing it
+found the second half:** `capture` stamped the moment a CSV was imported, so a
+feeder that simply trusted stamps would have turned months back-filled in one
+sitting into readings seconds apart. Both are fixed together, and the run says
+which clock it used.
+
 ## A claim this project made and had to withdraw
 
 **Reading `AXIOM_MINIMUMS` and concluding that nothing can answer from a single

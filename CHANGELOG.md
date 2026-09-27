@@ -6,6 +6,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **A capture is fed at the time it was taken.** The feeder fed every series as
+  values thirty days apart, ending at the clock, and never read `captured_at`,
+  so calendar months, a skipped month and a back-filled quarter all reached the
+  engine as the same even ladder -- and the learn stage dated its floor from a
+  spacing this package made up. When every capture carries a stamp, the series
+  is now placed by its stamps, in the order they were taken, and judged as of
+  the latest one; when none does, it is spaced at the interval as before. A
+  series half stamped, two captures at one instant, or a stamp that is not a
+  time is refused by position. `detect` reports which under `timing` (FINDINGS
+  F12).
+- **`capture` takes `--captured-at`, and no longer invents a time.** It stamped
+  the moment a file was imported, so three months back-filled in one sitting
+  came out seconds apart -- harmless while the feeder ignored stamps, and
+  wrong the moment it read them. Without the option a capture carries no time.
+  **A capture written by `capture` before this release carries the time it was
+  imported**: re-import it with `--captured-at`, or blank the field so the
+  series is spaced at the interval.
+
 ## [0.1.4] — 2026-09-27
 
 ### Changed

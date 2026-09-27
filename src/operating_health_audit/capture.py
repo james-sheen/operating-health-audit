@@ -36,6 +36,26 @@ EMPTY_CAPTURE = ("an empty capture reports the same as a complete one about an "
                  "empty organisation")
 
 
+def instant(stamp: str) -> datetime | None:
+    """A capture's `captured_at` as an instant in UTC, or None when it has none.
+
+    ISO 8601 with a `Z`, with an offset, or with neither, which is read as UTC;
+    a bare date is midnight UTC. Text that is none of those raises `ValueError`:
+    a stamp nobody can place is refused where it is read, never taken as absent,
+    because absent means something else here -- *spaced at the declared
+    interval* -- and the two would run the same series on two different clocks.
+    """
+    text = (stamp or "").strip()
+    if not text:
+        return None
+    if text[-1] in "Zz":
+        text = text[:-1] + "+00:00"
+    parsed = datetime.fromisoformat(text)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
 def _positions(labels: Sequence[str]) -> str:
     """`units[3]`, or `units[3], units[7] and 2 more` -- every refusal names
     where, and a list of every row of a large file would bury the sentence."""
@@ -267,6 +287,19 @@ def from_csv(path: str | Path, *, captured_at: str = "",
             f"{path}: {_positions(unreadable)} {what} -- blank a cell whose column "
             f"does not apply to its row; the empty cell is the one way this reader "
             f"is told a quantity is absent")
+    # WHEN IT WAS TAKEN, OR NOTHING. This stamped the moment of import, which
+    # is when the file was READ, not when the organisation was measured: three
+    # monthly spreadsheets back-filled in one sitting came out seconds apart.
+    # Harmless while the feeder spaced every series at thirty days regardless;
+    # a feeder that places captures by their stamps would have fed those three
+    # months to the engine as three readings a second apart. A capture with no
+    # stated time now carries none, and the feeder says it used the interval.
+    if captured_at:
+        try:
+            instant(captured_at)
+        except ValueError:
+            raise CaptureError(
+                f"{path}: captured_at {captured_at!r} is not a date and time; give "
+                f"one in ISO 8601, such as 2026-01-31 or 2026-01-31T18:00:00Z") from None
     return Export(points=tuple(points), complete=complete, source=str(path),
-                  captured_at=captured_at or datetime.now(timezone.utc)
-                  .replace(microsecond=0).isoformat().replace("+00:00", "Z"))
+                  captured_at=captured_at)

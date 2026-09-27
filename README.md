@@ -19,7 +19,11 @@ healthy numbers, and reports into nothing.
 
 **Stage 2 is the engine.** The same export, judged against declared bounds,
 declared bad states, and -- once enough captures accumulate -- trends and
-baselines.
+baselines. Each capture is placed at the time it was taken, its `captured_at`,
+and the series is judged as of the latest one. A series whose captures carry no
+time is spaced thirty days apart instead, and `detect` says which under
+`timing`: a declared cadence and a measured one read the same in every figure
+downstream.
 
 **Beside each finding, what could explain it.** `detect` asks the engine's
 `hypothesize` about each unit with a finding and prints the answer beside it:
@@ -48,6 +52,7 @@ the thirtieth monthly capture.
 operating-health-audit declare     <declaration>                 what the model claims
 operating-health-audit gate        <declaration> [--capture ...] refuse what is not ready
 operating-health-audit capture     <wide.csv> --out <capture>    produce an export
+                                   [--captured-at WHEN]          when it was taken
 operating-health-audit presence    <declaration> <capture>       the three-valued answer
 operating-health-audit regression  <before> <after>              two exports compared
 operating-health-audit detect      <model> <capture>...          feed a series to the engine

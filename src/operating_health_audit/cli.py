@@ -54,12 +54,15 @@ def cmd_declare(args) -> int:
 
 def cmd_capture(args) -> int:
     try:
-        export = _capture.from_csv(args.source, complete=not args.partial)
+        export = _capture.from_csv(args.source, complete=not args.partial,
+                                   captured_at=args.captured_at)
     except (_capture.CaptureError, OSError) as problem:
         return _could_not(str(problem))
     _capture.write(export, args.out)
     return _emit({"wrote": args.out, "units": len(export.points),
-                  "complete": export.complete, "exit_code": x.CLEAN})
+                  "complete": export.complete,
+                  "captured_at": export.captured_at or None,
+                  "exit_code": x.CLEAN})
 
 
 def _load_pair(declaration: str, capture_path: str):
@@ -132,6 +135,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     c = verbs.add_parser("capture", help="produce an export from a wide CSV")
     c.add_argument("source"); c.add_argument("--out", required=True)
+    c.add_argument("--captured-at", default="", metavar="WHEN",
+                   help="when the spreadsheet was taken, in ISO 8601 (a bare date "
+                        "is midnight UTC). Without it the capture carries no time, "
+                        "and detect spaces its series at the declared interval")
     c.add_argument("--partial", action="store_true",
                    help="mark the export incomplete, which it is unless the "
                         "exporter knows every unit reported")
