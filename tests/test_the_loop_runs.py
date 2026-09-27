@@ -123,7 +123,9 @@ class TestEveryStageAnswersOrDeclinesByName:
         """The model declares an objective and the hiring rounds a plan may
         choose between, so the plan ranks them. The rounds do not tie: a hire
         is scored by how far it moves a department from its own HOMEOSTASIS
-        baseline, which is what the objective reads."""
+        baseline, which is what the objective reads. And it declares how far a
+        plan looks -- two rounds at once -- so the plan searches pairs, where it
+        used to stop at one round under a stamp saying nobody had chosen."""
         payload = api.plan(session).to_dict()
         leg = payload["plan"]
         assert leg["ranked"] and leg["best"]
@@ -132,6 +134,10 @@ class TestEveryStageAnswersOrDeclinesByName:
             "every round scored the same; the lever moves nothing the objective reads")
         assert any(f.startswith("imagined_homeostasis") and f.endswith(":headcount")
                    for c in leg["candidates"] for f in c["findings"])
+        assert leg["checked"]["max_depth"] == 2
+        assert "search_depth_not_declared" not in leg["assumptions"]
+        assert any(len(c["actions"]) == 2 for c in leg["candidates"]), (
+            "the model declares a depth of two and no pair of rounds was rolled out")
         assert unpublished_reasons(payload) == []
 
     def test_learn(self, session):
@@ -292,6 +298,40 @@ class TestACaseOpensOnAFindingAndResolves:
         assert case.status == "resolved"
         book = api.case_book(session).to_dict()["cases"]
         assert (book["opened"], book["resolved"]) == (1, 1)
+
+
+def _planned(tmp_path, **planning):
+    """`plan` over the loop's own series, on a copy of the model whose planning
+    block is changed by `planning` -- the shipped file is never written."""
+    import yaml
+    from operating_health_audit import feeder
+
+    model = yaml.safe_load(MODEL.read_text())
+    model["domain"]["planning"].update(planning)
+    path = tmp_path / "planned.model.yaml"
+    path.write_text(yaml.safe_dump(model, sort_keys=False))
+    return api.plan(feeder.open_session(str(path), _series())).to_dict()
+
+
+class TestTheSearchStopsAtItsBudgetAndSaysSo:
+    """`max_rollouts` is a stop, and a stop that cut a search short has to say
+    so, with the count of what it left out: a plan chosen from part of the
+    field reads exactly like one chosen from all of it. The declared search
+    fits inside the default budget, so the shipped model shows only one side of
+    that. A copy with the budget set below the field shows the other."""
+
+    def test_the_declared_search_is_rolled_out_whole(self, session):
+        payload = api.plan(session).to_dict()
+        assert payload["plan"]["checked"]["plans_untested"] == 0
+        assert "budget_exhausted" not in declined_reasons(payload)
+
+    def test_a_budget_below_the_field_is_declined_with_its_count(self, session,
+                                                                 tmp_path):
+        field = api.plan(session).to_dict()["plan"]["checked"]["candidates_evaluated"]
+        short = _planned(tmp_path, max_rollouts=field - 4)
+        assert "budget_exhausted" in declined_reasons(short)
+        assert short["plan"]["checked"]["plans_untested"] == 4
+        assert unpublished_reasons(short) == []
 
 
 def test_the_stage_report_matches_what_the_run_did(session):

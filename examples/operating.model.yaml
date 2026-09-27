@@ -187,6 +187,14 @@ domain:
   # that is a demonstration of the mechanism, not advice about anybody's hiring.
   planning:
     objective: expected_findings
+    # HOW FAR A PLAN LOOKS: each round alone, and two at once -- a hire into one
+    # department beside a hire into another. The depth is the model's to
+    # choose, and left unsaid the engine searched one deep and stamped
+    # `search_depth_not_declared` on every plan. MEASURED at two before it was
+    # written: 24 plans rolled out, eleven of them pairs, and none scores below
+    # doing nothing, so the ranking's first place is unchanged. The default
+    # budget of 200 rollouts covers the search with room to spare.
+    max_depth: 2
 
   # WHEN A CASE CLOSES. A case opens on a finding and resolves after this many
   # checks in a row that looked at its indicator and found nothing at or above

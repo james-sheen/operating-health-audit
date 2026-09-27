@@ -15,6 +15,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `latency`, which RESPONSIVENESS reads. On the shipped case study the findings,
   declines and exit code are unchanged, byte for byte. A test now holds the
   model's unread fields and unreachable axioms at none.
+- **A plan may pair two hiring rounds.** The model declares `max_depth: 2`, so
+  `plan` rolls out each round alone and in pairs, where it stopped at one round
+  under the stamp `search_depth_not_declared`. Measured: 24 plans, none scoring
+  below doing nothing, so the best plan is unchanged. The loop test shows a
+  budget set below the search declined as `budget_exhausted`, with the plans it
+  left out counted.
 
 ## [0.1.3] — 2026-09-27
 

@@ -27,8 +27,8 @@ the declared causes, each with its posterior, or the reason the engine declined.
 The model declares which way a failure travels -- into a department from the
 executives who lead it, into a division from the departments reporting to it --
 and no strength, so today the causes come without numbers. The rest of the loop
-runs too. A plan ranks the declared hiring rounds by the findings each would
-bring. An executed hire is filed and graded against the next capture. The one
+runs too. A plan ranks the declared hiring rounds, alone and in pairs, by the
+findings each would bring. An executed hire is filed and graded against the next capture. The one
 declared coupling -- a department's headcount into its division's total, its
 gain withheld -- declines `insufficient_samples` until 121 monthly captures
 exist, which is ten years. And a case opened on a finding closes after two
