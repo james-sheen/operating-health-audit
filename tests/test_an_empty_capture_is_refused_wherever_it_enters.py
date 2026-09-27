@@ -170,6 +170,45 @@ class TestTheFeederRefusesASeriesItCannotFeed:
             feeder.run(str(bad), [str(CAPTURE)])
 
 
+class TestPresenceRefusesAnExportOfNothing:
+    """Fourteen absences, before: every declared unit reported missing from an
+    export that held none. An export holding no units cannot say which units
+    are absent, so the API refuses as the command line does."""
+
+    @pytest.mark.parametrize("which", range(4),
+                             ids=["a Path", "a str", "a parsed dict", "an export of nothing"])
+    def test_each_input(self, declaration, which) -> None:
+        from operating_health_audit import presence
+
+        out = presence.run(declaration, _items()[which])
+        assert out["exit_code"] == 2 and out["findings"] == []
+        assert out["could_not_run"].startswith("the export")
+
+    def test_the_api_answers_what_the_command_line_answers(self, tmp_path, declaration) -> None:
+        from operating_health_audit import capture, presence
+
+        api = presence.run(declaration, capture.Export(points=()))
+        code, cli = _run("presence", DECLARATION,
+                         _write(tmp_path, "empty.json", dict(_raw(), units=[])))
+        assert (api["exit_code"], code) == (2, 2)
+        for said in (api["could_not_run"], cli["could_not_run"]):
+            assert "holds no units" in said and said.endswith(capture.EMPTY_CAPTURE)
+
+    def test_a_capture_of_one_unit_is_still_compared(self, declaration) -> None:
+        """The other direction. One unit is a capture, and the rest are absent."""
+        from operating_health_audit import capture, presence
+
+        first = declaration.points[0]
+        one = capture.Export(complete=True, captured_at="2026-09-15T00:00:00Z", points=(
+            capture.Reading(name=first.name, unit_type=first.unit_type,
+                            path=f"probe#{first.name}", state="healthy",
+                            values={"headcount": 1.0}, edges=dict(first.edges)),))
+        out = presence.run(declaration, one)
+        assert "could_not_run" not in out
+        absent = [f for f in out["findings"] if f["kind"] == "declared_absent"]
+        assert len(absent) == len(declaration.points) - 1
+
+
 def test_regression_refuses_two_exports_of_nothing() -> None:
     """*Nothing moved* is true of an organisation with no units."""
     from operating_health_audit import capture, regression

@@ -12,6 +12,7 @@ from typing import Any, Mapping
 
 from presence_audit import diff, vocabulary as _vocabulary
 
+from . import capture as _capture
 from . import exit_contract as x
 from .formats import PRESENCE_FORMAT
 from .vertical import OperatingVocabulary
@@ -24,6 +25,20 @@ def run(declaration, export, *, require_complete: bool = False) -> Mapping[str, 
     globally, so two audits can run in one process without one deciding the
     other's nouns.
     """
+    # AN EXPORT HOLDING NO UNITS CANNOT SAY WHICH UNITS ARE ABSENT. Compared
+    # anyway, it reported every declared unit missing -- fourteen absences for
+    # a file that held nothing, a statement about the exporter rather than the
+    # organisation -- and a path raised AttributeError. Refused with the
+    # loader's sentence, so the API answers what the command line answers.
+    refusal = _capture.refusal([("the export", export)])
+    if refusal:
+        return {"format": PRESENCE_FORMAT,
+                "captured_at": getattr(export, "captured_at", ""),
+                "complete": bool(getattr(export, "complete", False)),
+                "declared": len(declaration.points), "captured": 0,
+                "findings": [], "unclassified": [], "why": [],
+                "could_not_run": refusal, "exit_code": x.INCOMPLETE}
+
     vocab = OperatingVocabulary({p.name: p.unit_type for p in declaration.points})
     with _vocabulary.using(vocab):
         report = diff.compare(declaration, export)
