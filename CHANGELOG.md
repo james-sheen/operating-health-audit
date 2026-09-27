@@ -6,6 +6,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **A role is declared only where an axiom reads it.** The model declared a
+  `role:` on every numeric indicator, and on eighteen of them no declared axiom
+  reads one -- only RESPONSIVENESS and CONSISTENCY do -- so the engine reported
+  eighteen unread fields on every load. They are gone; `cycle_time_days` keeps
+  `latency`, which RESPONSIVENESS reads. On the shipped case study the findings,
+  declines and exit code are unchanged, byte for byte. A test now holds the
+  model's unread fields and unreachable axioms at none.
+
 ## [0.1.3] — 2026-09-27
 
 ### Added

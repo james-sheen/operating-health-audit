@@ -63,6 +63,13 @@
 # the ABSENCE of that decline was never evidence a role was supplied. The four
 # the engine accepts are `latency`, `count`, `percentage`, `ratio`.
 #
+# AND IT IS DECLARED ONLY WHERE SOMETHING READS IT. Those two axioms are a role's
+# only readers. This model used to declare one on every numeric indicator, and on
+# eighteen of them no declared axiom reads it: the engine reported each as an
+# unread field, and a reader of the model took eighteen declarations to be doing
+# something. So one role remains, on `cycle_time_days`, where RESPONSIVENESS reads
+# it, and a test holds the model's unread fields at none.
+#
 # AND THE SOURCE DOMAIN PUT RESPONSIVENESS ON THE WRONG INDICATOR. It declared it
 # on `throughput`, which is a rate; RESPONSIVENESS is role-gated to `latency`
 # alone, so that pair evaluates nothing whatever the sample count. The latency in
@@ -210,17 +217,14 @@ domain:
         type: NUMERIC
         axioms: [MONOTONICITY, BOUNDEDNESS]
         window: 3650d
-        role: count
       - name: total_headcount
         type: NUMERIC
         axioms: [BOUNDEDNESS]
         window: 3650d
-        role: count
       - name: operating_margin_pct
         type: NUMERIC
         axioms: [HOMEOSTASIS]
         window: 3650d
-        role: percentage
       - name: status
         type: STATE
         axioms: [STABILITY]
@@ -241,7 +245,6 @@ domain:
         type: NUMERIC
         axioms: [HOMEOSTASIS]
         window: 3650d
-        role: count
       # The one pair of published bounds this domain actually has. A target
       # operating model that names a turnover ceiling is naming it as an UPPER
       # bound, and the engine fires AT a declared number as well as past it --
@@ -250,29 +253,24 @@ domain:
         type: NUMERIC
         axioms: [BOUNDEDNESS, HOMEOSTASIS]
         window: 3650d
-        role: percentage
         warning: 15
         critical: 25
       - name: revenue_m
         type: NUMERIC
         axioms: [MONOTONICITY, BOUNDEDNESS]
         window: 3650d
-        role: count
       - name: cost_m
         type: NUMERIC
         axioms: [BOUNDEDNESS]
         window: 3650d
-        role: count
       - name: margin_pct
         type: NUMERIC
         axioms: [HOMEOSTASIS]
         window: 3650d
-        role: percentage
       - name: satisfaction_score
         type: NUMERIC
         axioms: [HOMEOSTASIS, STABILITY]
         window: 3650d
-        role: ratio
       - name: status
         type: STATE
         axioms: [STABILITY]
@@ -295,13 +293,11 @@ domain:
         type: NUMERIC
         axioms: [MONOTONICITY]
         window: 3650d
-        role: count
         plausible_range: [0, 50]
       - name: direct_reports
         type: NUMERIC
         axioms: [BOUNDEDNESS]
         window: 3650d
-        role: count
         warning: 12
         critical: 20
         plausible_range: [0, 200]
@@ -309,7 +305,6 @@ domain:
         type: NUMERIC
         axioms: [HOMEOSTASIS, STABILITY]
         window: 3650d
-        role: ratio
         plausible_range: [0, 5]
 
     Project:
@@ -324,17 +319,14 @@ domain:
         type: NUMERIC
         axioms: [BOUNDEDNESS]
         window: 3650d
-        role: count
       - name: spent_m
         type: NUMERIC
         axioms: [BOUNDEDNESS, MONOTONICITY]
         window: 3650d
-        role: count
       - name: completion_pct
         type: NUMERIC
         axioms: [MONOTONICITY]
         window: 3650d
-        role: percentage
       - name: status
         type: STATE
         axioms: [STABILITY]
@@ -362,7 +354,6 @@ domain:
         type: NUMERIC
         axioms: [BOUNDEDNESS]
         window: 3650d
-        role: percentage
         warning: 5
         critical: 10
       # NOT IN THE SHIPPED CASE STUDY'S EXPORT. Neither this nor
@@ -375,9 +366,7 @@ domain:
         type: NUMERIC
         axioms: [BOUNDEDNESS]
         window: 3650d
-        role: count
       - name: automation_pct
         type: NUMERIC
         axioms: [MONOTONICITY]
         window: 3650d
-        role: percentage
