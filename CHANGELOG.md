@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.6] — 2026-09-28
+
 ### Changed
 
 - **The engine floor is 0.2.18**, forced by a failing control: the loop test
