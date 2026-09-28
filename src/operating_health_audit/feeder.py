@@ -289,6 +289,24 @@ def open_session(model_path: str, captures: Sequence[Any], *,
     return session
 
 
+def _kinds(payload: Mapping[str, Any], dropped: Sequence[Any]) -> list[str]:
+    """What the exit table scores this run by: each finding, each decline, and a
+    model the engine read nothing from.
+
+    A FINDING IS READ BY THE KEY THE ENGINE WRITES, `problem_type`. This read
+    `type` and `kind`, which the engine never sets, so from the first release
+    every engine finding was scored `unclassified` and floored the run at 2 --
+    could-not-complete -- on a run that had found something (FINDINGS F14). A
+    finding carrying no problem type is still refused a score, by name.
+    """
+    kinds = [x.ENGINE_FINDING if f.get("problem_type") else "unclassified"
+             for f in payload.get("findings", [])]
+    kinds += [d.get("reason") for d in payload.get("not_checked", []) if d.get("reason")]
+    if dropped:
+        kinds.append("model_not_read")
+    return kinds
+
+
 def ranking(api: Any, session: Any, entity_id: str) -> Mapping[str, Any]:
     """What could explain a finding on this unit, from the engine's own verb.
 
@@ -346,11 +364,7 @@ def run(model_path: str, captures: Sequence[Any], *,
                 rankings[unit] = ranking(api, session, unit)
 
     dropped = session.dropped_declarations()
-    kinds = [f.get("type") or f.get("kind") or "unclassified"
-             for f in payload.get("findings", [])]
-    kinds += [d.get("reason") for d in payload.get("not_checked", []) if d.get("reason")]
-    if dropped:
-        kinds.append("model_not_read")
+    kinds = _kinds(payload, dropped)
 
     # ONE RANKING PER UNIT, beside each of its findings. Asked once per unit
     # because the verb answers about the unit, whichever of its readings fired,

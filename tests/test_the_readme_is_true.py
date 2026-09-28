@@ -29,14 +29,35 @@ def _run(*argv) -> tuple[int, dict]:
 
 def test_the_day_one_finding_count_is_what_the_readme_says() -> None:
     """The headline number. Written as a word, so the assertion reads the word."""
-    code, out = _run("detect", str(MODEL), str(CAPTURE))
-    assert code == 2, "the shipped export cannot feed two Process indicators"
+    _code, out = _run("detect", str(MODEL), str(CAPTURE))
     counted = len(out["findings"])
     claimed = re.search(r"\b(\w+) findings from a single capture\b", README)
     assert claimed, "the README no longer states a day-one finding count"
     words = {"eleven": 11, "twelve": 12, "ten": 10, "seven": 7, "twenty-two": 22}
     assert words.get(claimed.group(1).lower()) == counted, (
         f"the README says {claimed.group(1)} and the run produces {counted}")
+
+
+def test_the_shipped_example_exits_2_for_the_reason_the_readme_gives() -> None:
+    """Its findings score `1`, and four declared checks the export carries no
+    value for score `2`; the worse wins. This asserted the code alone, with a
+    reason in its message that was not the reason: every finding was scored
+    `unclassified`, which floors at `2` by itself, so the check held for a cause
+    it never read (FINDINGS F14)."""
+    code, out = _run("detect", str(MODEL), str(CAPTURE))
+    assert code == out["exit_code"] == 2
+    floors = {row["kind"]: row["floor"] for row in out["why"]}
+    assert floors["engine_finding"] == 1 and floors["missing_property"] == 2
+    assert [k for k, floor in floors.items() if floor == 2] == ["missing_property"]
+    assert out["unclassified"] == []
+    unanswered = {((d.get("entity") or d.get("entity_id")), d.get("indicator"))
+                  for d in out["not_checked"] if d["reason"] == "missing_property"}
+    assert unanswered == {("proc-sales-cycle", "throughput"),
+                          ("proc-onboarding", "throughput"),
+                          ("dept-engineering", "margin_pct"),
+                          ("dept-support", "margin_pct")}
+    for name in {indicator for _, indicator in unanswered}:
+        assert f"`{name}`" in README, f"the README does not name {name}"
 
 
 def test_the_captures_the_coupling_waits_for_are_the_engines() -> None:

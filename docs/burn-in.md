@@ -130,6 +130,13 @@ answer.
 
 22 `no_threshold` declines are honest: no operating model publishes a rate for
 these, and inventing one would put a number nobody wrote into a model judged
-against it. 4 `missing_property` are the two Process indicators the shipped
-export has no column for — `throughput` and `automation_pct`. Both are the
-engine saying truthfully that this export could not answer them.
+against it. 4 `missing_property` are two declared checks the shipped export
+carries no value for: `throughput` on both processes, and `margin_pct` on the
+engineering and support departments, whose margin it does not report. Both are
+the engine saying truthfully that this export could not answer them, and they
+are what makes `detect` exit `2` on this capture.
+
+This paragraph named `throughput` and `automation_pct` until 0.1.7, and the
+model's comment said the same. Measured, `automation_pct` never declines
+`missing_property` on one capture: MONOTONICITY needs three readings, so it
+declines `insufficient_samples` before it looks for a value.

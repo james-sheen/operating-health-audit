@@ -67,6 +67,13 @@ accident: an unreadable declaration, an unloadable model and a missing engine
 each arrive as their own exception and leave as `2` with a sentence saying
 which, rather than as a traceback exiting `1`.
 
+**`detect` on the shipped capture exits `2`, and says why under `why`.** Its
+eleven findings score `1`. Four declared checks score `2`, because the export
+carries no value for them -- `throughput` on both processes, and `margin_pct` on
+the engineering and support departments, whose margin it does not report -- so
+the engine declines them `missing_property`. The worse wins. With those columns
+supplied, the same run exits `1`.
+
 Composing nothing is `0` here and `2` in the core, deliberately. The core
 composes stage results, so no stage reporting means nothing ran. This composes
 findings, so no findings means the comparison ran and found none -- the answer

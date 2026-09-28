@@ -98,6 +98,17 @@ FLOORS["model_not_read"] = (INCOMPLETE,
     "the engine dropped every declaration in the model, so the run judged "
     "nothing and a clean verdict would be about an empty question")
 
+#: A FINDING THE ENGINE MADE. The engine reports each one's kind as
+#: `problem_type` -- `threshold_exceeded:turnover_pct`, `declared_bad_state:status`
+#: -- one per declared invariant and indicator, so the set is open and a row per
+#: name could never be derived. It is scored as ONE kind instead: the engine
+#: judged a declared invariant broken on a unit, and that is the finding Stage 2
+#: exists to produce.
+ENGINE_FINDING = "engine_finding"
+FLOORS[ENGINE_FINDING] = (FINDINGS,
+    "the engine judged an invariant the model declares broken on a unit; that is "
+    "the finding Stage 2 exists to produce")
+
 #: Kinds that are findings normally and could-not-complete when the caller asked
 #: for a complete answer.
 WITHHELD = ("export_became_partial",)

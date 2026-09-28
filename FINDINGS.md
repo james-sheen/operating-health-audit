@@ -167,6 +167,22 @@ candidates three to two -- and `evidence_needed` picks its reading the same way.
 The loop test pins the entity and the basis, and leaves the reading unpinned
 until the engine names a value.
 
+## In this package, at 0.1.6
+
+**F14. Every engine finding was scored as unclassified.** `detect` took each
+finding's kind from `type` or `kind`, and the engine writes neither -- it
+reports a finding's kind as `problem_type` -- so from the first release every
+engine finding floored the run at `2`, could-not-complete, where the README
+promises `1`. The test that pinned the shipped example's exit code asserted `2`
+with a reason in its message that was not the reason, and held for the one it
+never read. Found by running the example while releasing 0.1.6. Reproducing it
+found the second half: `docs/burn-in.md` and the model's comment named
+`throughput` and `automation_pct` as the two indicators the export cannot feed,
+and measured, the four `missing_property` are `throughput` on both processes and
+`margin_pct` on two departments -- `automation_pct` declines for too few
+readings. An engine finding now scores `1`, whatever its problem type; the
+example still exits `2`, for the reason its `why` names.
+
 ## A claim this project made and had to withdraw
 
 **Reading `AXIOM_MINIMUMS` and concluding that nothing can answer from a single

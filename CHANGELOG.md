@@ -6,6 +6,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **An engine finding is scored as a finding.** `detect` read each finding's
+  kind from `type` or `kind`, which the engine never writes -- it reports
+  `problem_type` -- so every finding was scored `unclassified` and a run that
+  had found something exited `2`, could-not-complete, where the README promises
+  `1`. Every engine finding now scores `1`, whatever its problem type, and one
+  carrying no problem type is still refused a score by name (FINDINGS F14).
+- **Why the shipped example exits `2` is said, and tested.** Four declared checks
+  have no value in the export: `throughput` on both processes and `margin_pct` on
+  the engineering and support departments. `docs/burn-in.md` and the model's
+  comment named `throughput` and `automation_pct`; `automation_pct` declines for
+  too few readings instead. The README states the example's exit code and its
+  reason, and a test reads both off the run.
+
 ## [0.1.6] — 2026-09-28
 
 ### Changed

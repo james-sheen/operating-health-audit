@@ -365,11 +365,13 @@ domain:
         warning: 5
         critical: 10
       # NOT IN THE SHIPPED CASE STUDY'S EXPORT. Neither this nor
-      # `automation_pct` has a column in it, so both decline
-      # `missing_property` there. Declared anyway: they are indicators an
-      # operating review asks for, and the decline says truthfully that
-      # this export could not answer them. Dropping them would make the
-      # model agree with one exporter instead of with the domain.
+      # `automation_pct` has a column in it. On one capture `throughput`
+      # declines `missing_property`; `automation_pct` declines
+      # `insufficient_samples` first, because MONOTONICITY needs three
+      # readings before it looks for a value. Declared anyway: they are
+      # indicators an operating review asks for, and the declines say
+      # truthfully that this export could not answer them. Dropping them
+      # would make the model agree with one exporter instead of the domain.
       - name: throughput
         type: NUMERIC
         axioms: [BOUNDEDNESS]
