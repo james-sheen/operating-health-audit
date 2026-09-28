@@ -339,8 +339,12 @@ def test_the_stage_report_matches_what_the_run_did(session):
     stage reads -- and each claim is checked against what the stage then did."""
     stages = {name: row["declared"] for name, row in
               api.model_describe(session).to_dict()["model"]["stages"].items()}
-    assert stages == {"check": True, "hypothesize": True, "plan": True,
-                      "act": True, "learn": True, "case": True}
+    # Read by lookup, as the engine's compatibility policy asks of every reader:
+    # a patch release may add a stage, and one not named here means the engine
+    # is newer than this test, not that the model changed.
+    named = {"check": True, "hypothesize": True, "plan": True,
+             "act": True, "learn": True, "case": True}
+    assert {name: stages.get(name) for name in named} == named
     assert api.hypothesize(session, LED).to_dict()["hypothesis"]["candidates"]
     assert api.plan(session).to_dict()["plan"]["ranked"]
     assert _hire(_fresh())["execution"]["checked"]["pairs_filed"] == 1
