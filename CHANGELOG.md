@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.7] — 2026-09-28
+
 ### Fixed
 
 - **An engine finding is scored as a finding.** `detect` read each finding's
