@@ -36,7 +36,9 @@ findings each would bring. An executed hire is filed and graded against the next
 declared coupling -- a department's headcount into its division's total, its
 gain withheld -- declines `insufficient_samples` until 121 monthly captures
 exist, which is ten years. And a case opened on a finding closes after two
-clean monthly captures.
+clean monthly captures. `gaps` locates what the model cannot explain -- on the
+export as shipped, every unit as detached -- and a case reads a confirmed cause
+back against the ranking it held before.
 
 ## What it answers on day one
 

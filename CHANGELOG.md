@@ -6,6 +6,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **The engine floor is 0.2.18**, forced by a failing control: the loop test
+  now reads what 0.2.18 adds, and on 0.2.17 exactly the five tests that read it
+  fail while the other 223 pass.
+
+### Added
+
+- **The loop test reads every new field of the loop.** For a department's
+  finding `hypothesize` names one of its two leaders as the reading the ranking
+  rests on, by the shape of the declared graph; for a division's it names the
+  department two executives lead. `gaps` locates nothing on the connected
+  series and names what it cannot read, and on the export as shipped locates all
+  fourteen units as detached. Every plan round reaches nothing and says
+  `gain_not_adopted`, because the one coupling's gain is withheld. A confirmed
+  cause is read back against the ranking before it.
+- **FINDINGS F13**: the reading a ranking rests on can be a relation on this
+  model, so the test pins the entity and leaves the reading unpinned.
+
 ## [0.1.5] — 2026-09-27
 
 ### Fixed

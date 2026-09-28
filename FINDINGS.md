@@ -154,6 +154,19 @@ feeder that simply trusted stamps would have turned months back-filled in one
 sitting into readings seconds apart. Both are fixed together, and the run says
 which clock it used.
 
+## In `arbiter-engine` 0.2.17
+
+**F13. The reading a ranking rests on can be a relation.** `hypothesize` names
+the entity whose reading would most change its ranking, and gives the reading
+as that entity's first declared indicator. On this model a department's first
+indicator is `reports_to` and an executive's is `leads`, so a division's finding
+names `dept-sales.reports_to` and a department's names `exec-cro.leads`:
+relations the CONNECTIVITY check reads, not values anyone can take. The ENTITY
+is right -- reading the department two executives lead splits a division's five
+candidates three to two -- and `evidence_needed` picks its reading the same way.
+The loop test pins the entity and the basis, and leaves the reading unpinned
+until the engine names a value.
+
 ## A claim this project made and had to withdraw
 
 **Reading `AXIOM_MINIMUMS` and concluding that nothing can answer from a single

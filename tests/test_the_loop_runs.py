@@ -104,6 +104,35 @@ class TestEveryStageAnswersOrDeclinesByName:
         assert all(c["posterior"] is None for c in candidates)
         assert unpublished_reasons(payload) == []
 
+    def test_the_ranking_names_the_reading_it_rests_on(self, session):
+        """Two executives lead the department and each is on one path the
+        other is not, so the reading named splits them one to one, by the shape
+        of the declared graph, stamped with the assumption that makes it a test.
+        No edge declares a delay, so every cause is read at the finding's
+        instant and nothing says `read_at`. With no strength, forcing a cause
+        answers nothing: `infer` would decline, so each carries null."""
+        leg = api.hypothesize(session, LED).to_dict()["hypothesis"]
+        named = leg["most_discriminating"]
+        assert named["entity"] in LEADERS
+        assert (named["basis"], named["splits"]) == ("structure", [1, 1])
+        # `reading` is not pinned: the engine names the type's first declared
+        # indicator, which on this model is a relation (FINDINGS F13).
+        assert "faults_visible_along_channels" in leg["assumptions"]
+        assert "read_at" not in leg
+        assert {c["cause"]: c["path"] for c in leg["candidates"]} == {
+            leader: [f"{leader}->{LED}"] for leader in LEADERS}
+        assert all(c["do_would_answer"] is None for c in leg["candidates"])
+
+    def test_a_division_names_the_department_with_the_most_executives(self, session):
+        """A division's finding can be explained by either department or any
+        executive leading one. Reading the department two executives lead
+        splits the five candidates three to two, the most even split there is."""
+        leg = api.hypothesize(session, "div-commercial").to_dict()["hypothesis"]
+        named = leg["most_discriminating"]
+        assert (named["entity"], named["basis"], named["splits"]) == (
+            "dept-sales", "structure", [3, 2])
+        assert len(leg["candidates"]) == 5
+
     def test_the_missing_strength_is_named(self, session):
         """`cpt_missing` is the true answer while nobody has a strength to give,
         and the inference the ranking rests on says so by name."""
@@ -139,6 +168,19 @@ class TestEveryStageAnswersOrDeclinesByName:
         assert any(len(c["actions"]) == 2 for c in leg["candidates"]), (
             "the model declares a depth of two and no pair of rounds was rolled out")
         assert unpublished_reasons(payload) == []
+
+    def test_what_each_round_reaches(self, session):
+        """A hire moves a department's headcount, and the one coupling that
+        would carry it to the division has its gain withheld: no round's effect
+        crosses an edge, every round that acts says so by name, and none claims
+        to reach anything. No spread is declared either, so there is no closest
+        call and nothing is named as deciding one."""
+        leg = api.plan(session).to_dict()["plan"]
+        for candidate in leg["candidates"]:
+            assert candidate["reaches"] == [], candidate["plan"]
+            assert candidate["decisive"] is None and candidate["margin_sigmas"] is None
+            if candidate["actions"]:
+                assert "gain_not_adopted" in candidate["declines"], candidate["plan"]
 
     def test_learn(self, session):
         """One coupling is declared, with its gain withheld, and thirty monthly
@@ -300,6 +342,69 @@ class TestACaseOpensOnAFindingAndResolves:
         assert (book["opened"], book["resolved"]) == (1, 1)
 
 
+class TestGapsLocatesWhatTheModelCannotExplain:
+    """`gaps` also reads the other way from the rest of the loop: from what was
+    observed back to where the declaration fails to explain it."""
+
+    def test_the_connected_series_locates_nothing_and_names_what_it_cannot_read(
+            self, session, sensed):
+        residuals = api.gaps(session).to_dict()["residuals"]
+        assert residuals["hypotheses"] == []
+        # No balance is declared, and how many executions make a pattern is the
+        # model's to say. This model does not say, and no number is chosen.
+        assert {(d["reason"], d["location"]) for d in residuals["not_checked"]} == {
+            ("missing_config", "conservation"), ("missing_config", "gaps.min_cycles")}
+        assert unpublished_reasons(residuals) == []
+
+    def test_the_export_as_shipped_locates_every_unit_it_detached(self):
+        """The source case study ships its export with the relationships
+        removed. Every unit is located once, as detached, with the relation the
+        model says it must have and the reading that would settle it."""
+        from operating_health_audit import capture, feeder
+
+        shipped = capture.load(ROOT / "examples" / "acme.capture.asshipped.json")
+        session = feeder.open_session(str(MODEL), [shipped])
+        api.check(session)
+        located = api.gaps(session).to_dict()["residuals"]["hypotheses"]
+        assert {h["at"] for h in located} == set(session.entities)
+        assert len(located) == len(session.entities) == 14
+        assert {h["kind"] for h in located} == {"absent_or_detached"}
+        assert all(h["evidence_needed"] == f"{h['at']}.{h['relation']}"
+                   for h in located)
+
+
+class TestAConfirmationSaysWhereTheCauseWasRanked:
+
+    def test_the_book_reads_the_confirmation_against_the_ranking_before_it(self):
+        """A person confirms the executive the ranking named; the book says where
+        that executive stood and that the named reading settled it -- counts
+        beside the row, never a rate."""
+        session = _fresh()
+        with api.as_of(AT):
+            api.check(session)
+            case_id = api.open_case(session, LED, "headcount",
+                                    basis="a headcount breach at the September review"
+                                    ).to_dict()["case"]["case_id"]
+            ranking = api.hypothesize(session, LED)
+            api.attach_stage(session, case_id, "hypothesize", ranking)
+            api.attach_stage(session, case_id, "gaps", api.gaps(session))
+        leg = ranking.to_dict()["hypothesis"]
+        named = leg["most_discriminating"]["entity"]
+        causes = [c["cause"] for c in leg["candidates"]]
+        with api.as_of(AT + timedelta(minutes=5)):
+            attached = api.attach_stage(
+                session, case_id, "confirm",
+                reference={"cause": named, "basis": "the October review"}).to_dict()
+        assert attached["case"]["checked"]["stages_attached"] == 1
+        confirmed = api.case_book(session).to_dict()["cases"]["confirmed"]
+        assert confirmed["rows"] == [{
+            "case_id": case_id, "cause": named, "rank": causes.index(named) + 1,
+            "of": 2, "named_reading_settled_it": True}]
+        assert (confirmed["confirmations"], confirmed["ranked"],
+                confirmed["not_ranked"]) == (1, 1, 0)
+        assert unpublished_reasons(attached) == []
+
+
 def _planned(tmp_path, **planning):
     """`plan` over the loop's own series, on a copy of the model whose planning
     block is changed by `planning` -- the shipped file is never written."""
@@ -343,9 +448,11 @@ def test_the_stage_report_matches_what_the_run_did(session):
     # a patch release may add a stage, and one not named here means the engine
     # is newer than this test, not that the model changed.
     named = {"check": True, "hypothesize": True, "plan": True,
-             "act": True, "learn": True, "case": True}
+             "act": True, "learn": True, "case": True,
+             "gaps": True, "confirm": True}
     assert {name: stages.get(name) for name in named} == named
     assert api.hypothesize(session, LED).to_dict()["hypothesis"]["candidates"]
+    assert "residuals" in api.gaps(session).to_dict()
     assert api.plan(session).to_dict()["plan"]["ranked"]
     assert _hire(_fresh())["execution"]["checked"]["pairs_filed"] == 1
     learned = api.model_describe(session).to_dict()["model"]["proposed_transitions"]
