@@ -18,3 +18,12 @@ battery/series/
 # file that gives this clone a rule against the internal commit format. It does
 # not travel -- a fresh clone has no rule until somebody copies it in.
 .hygiene-local.json
+
+# The ledger `detect --ledger` keeps. On a real review its case book names the
+# organisation's units and whatever a confirmation's basis says, so it is the
+# engagement's record and never this repository's: keep it where the engagement
+# keeps its records (docs/burn-in.md). Ignored by the extensions SQLite files
+# carry, so one written in a clone cannot be staged with everything else.
+*.db
+*.sqlite
+*.sqlite3
