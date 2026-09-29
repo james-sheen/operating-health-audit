@@ -116,6 +116,44 @@ four edges decline, at 121 all four are fitted, each at a gain of 1.0 -- a
 department's hire adds one to its division's total -- with its interval, and
 with the replay the engine could not run because no record exists to replay.
 
+## Before a real review: two documents that make the plan answer
+
+The plan ranks the declared hiring rounds by the findings each would bring, and
+on the shipped example no round reaches anything: the coupling's gain is
+withheld, and a division's `total_headcount` declares no bound. Fitting the gain
+waits ten years (above). **A real engagement can declare both instead, each from
+a document it already holds:**
+
+- **Its reporting definition.** If the organisation's own reporting says a
+  division's headcount is the sum of its departments', the gain is 1 by that
+  definition, not by a fit: write `gain: 1` in the coupling's `transition:` and
+  name the definition in its `source:`. If the definition counts anyone outside
+  the departments -- a division's own executives, contractors, a shared pool --
+  it is not an identity, and the gain stays withheld.
+- **Its headcount budget.** A division's budgeted headcount is an upper bound
+  somebody published: write it as `total_headcount`'s `warning:` or `critical:`,
+  with the budget as its basis. With no budget, declare no bound; a number
+  nobody wrote is the guess this model exists to refuse.
+
+Measured on copies of the shipped model and capture, against `arbiter-engine`
+0.2.20: as shipped, none of the 24 candidates reaches anything. With `gain: 1`,
+all 23 but doing nothing reach a division one hop away, and find nothing there.
+With a budget as well -- 830, against a commercial division of 820 -- 8 of the
+29 reaches carry that division's warning, each from a round adding ten people or
+more to one of its departments, and no reach into operations, at 340, carries
+one: the plan says which hire would break the budget. The shipped example declares
+neither, because its organisation is invented, and so would its definition and
+its budget be.
+
+**Keep both documents, and the model they fill, out of this repository.** They
+are the organisation's, and a unit small enough that one person joining or
+leaving moves its headcount makes that headcount personal data. Cite each
+document by the engagement's own reference -- title, version, and its owner by
+role -- rather than quoting or attaching it. Keep the filled model, the captures
+and the `--ledger` file wherever the engagement keeps its records, and give
+`confirm --basis` a role and a record, never a person's name. Nothing from a real
+review belongs in `examples/`, which is invented and says so.
+
 ## The kill criterion, and how it resolved
 
 Recorded when HOMEOSTASIS could not answer: *if a future engine release makes

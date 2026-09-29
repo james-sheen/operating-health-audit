@@ -136,7 +136,9 @@ domain:
       # gain from at least 120 paired monthly changes -- 121 captures -- so until
       # then the stage answers `insufficient_samples` by name, which is the true
       # answer. The loop test proves the mechanism on a labelled-synthetic series
-      # of 121 captures instead, built so the answer is known.
+      # of 121 captures instead, built so the answer is known. A REAL review need
+      # not wait: `docs/burn-in.md` names the two of its own documents that
+      # declare this gain and the bound it reaches.
       #
       # A step, with no delay: a hire is in the division's total at the same
       # month-end, so there is no time course to declare beyond that.

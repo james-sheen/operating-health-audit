@@ -49,7 +49,9 @@ plan ranks the declared hiring rounds, alone and in pairs, by the findings each
 would bring, and an executed hire is filed and graded against the next capture.
 The one declared coupling, a department's headcount into its division's total
 with its gain withheld, declines `insufficient_samples` until 121 monthly captures
-exist, which is ten years. `gaps` locates what the model cannot
+exist, which is ten years. A real review need not wait: its own reporting definition
+can declare the gain, and its headcount budget the bound a hiring round would reach
+(`docs/burn-in.md`). `gaps` locates what the model cannot
 explain -- on the export as shipped, every unit as detached.
 
 ## What it answers on day one
