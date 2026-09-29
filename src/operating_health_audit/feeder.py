@@ -153,10 +153,11 @@ def _latest_stamp(captures: Sequence[Any]) -> datetime | None:
     return None
 
 
-def _loaded(model_path: str) -> Any:
-    """A session with the model loaded and nothing fed."""
+def _loaded(model_path: str, ledger: str | None = None) -> Any:
+    """A session with the model loaded and nothing fed -- on the durable ledger
+    at `ledger` when one is named, whose file also holds the case book."""
     api = _engine()
-    session = api.EngineSession()
+    session = api.EngineSession(ledger=_ledger(ledger)) if ledger else api.EngineSession()
     try:
         session.load_model(model_path)
     except Exception as problem:            # yaml errors are not ValueError
@@ -173,6 +174,22 @@ def _engine():
             f"Stage 2 needs the engine: pip install operating-health-audit[detect] "
             f"({problem})") from None
     return api
+
+
+class LedgerUnreadable(ValueError):
+    """The ledger file named could not be opened as one."""
+
+
+def _ledger(path: str) -> Any:
+    """The engine's durable ledger at `path`. Its file keeps the case book, so
+    a case opened on one run is there to be checked, and confirmed, on the next."""
+    _engine()
+    from arbiter_engine import SqlitePredictionLedger
+    try:
+        return SqlitePredictionLedger(path)
+    except Exception as problem:            # sqlite3 errors are not ValueError
+        raise LedgerUnreadable(f"{path} could not be opened as a ledger: "
+                               f"{type(problem).__name__}: {problem}") from None
 
 
 #: The property name a state is fed under. The model declares STABILITY on
@@ -220,7 +237,8 @@ def _series(captures: Sequence[Any]) -> dict[tuple[str, str], list[Any]]:
 
 
 def open_session(model_path: str, captures: Sequence[Any], *,
-                 interval_seconds: float = 2_592_000.0) -> Any:
+                 interval_seconds: float = 2_592_000.0,
+                 ledger: str | None = None) -> Any:
     """A session with the model loaded and the series fed, not yet checked.
 
     Split out of `run` so the other stages of the loop -- `hypothesize`, `plan`
@@ -229,7 +247,7 @@ def open_session(model_path: str, captures: Sequence[Any], *,
     refuses raises `CaptureUnusable`, after the model is read, so a broken model
     is still reported as broken first.
     """
-    session = _loaded(model_path)
+    session = _loaded(model_path, ledger)
     refusal = unusable(captures)
     if refusal:
         raise CaptureUnusable(refusal)
@@ -307,7 +325,8 @@ def _kinds(payload: Mapping[str, Any], dropped: Sequence[Any]) -> list[str]:
     return kinds
 
 
-def ranking(api: Any, session: Any, entity_id: str) -> Mapping[str, Any]:
+def ranking(api: Any, session: Any, entity_id: str, *,
+            envelope: Any = None) -> Mapping[str, Any]:
     """What could explain a finding on this unit, from the engine's own verb.
 
     The causes `hypothesize` ranks, each with its posterior, and every reason it
@@ -315,24 +334,42 @@ def ranking(api: Any, session: Any, entity_id: str) -> Mapping[str, Any]:
     is where to look next, not a judgement about the organisation, so nothing
     here enters the exit code. A posterior of None beside no decline is printed
     as it arrived -- this package does not invent the missing word for it.
+
+    AND THE ONE READING TO TAKE FIRST, `most_discriminating`, as the engine
+    named it. This kept the causes and dropped it (FINDINGS F15), and this model
+    declares no strength, so what a reader got was a list of causes each `None`
+    beside `cpt_missing` -- where the engine had said which unit's reading
+    splits them, and how evenly. Printed as it arrived, `None` included.
     """
-    leg = api.hypothesize(session, entity_id).to_dict().get("hypothesis") or {}
+    answer = envelope if envelope is not None else api.hypothesize(session, entity_id)
+    leg = answer.to_dict().get("hypothesis") or {}
     return {
         "causes": [[c.get("cause"), c.get("posterior")]
                    for c in leg.get("candidates") or ()],
+        "most_discriminating": leg.get("most_discriminating"),
         "declined": sorted({d.get("reason") for d in leg.get("not_checked") or ()
                             if d.get("reason")}),
     }
 
 
 def run(model_path: str, captures: Sequence[Any], *,
-        interval_seconds: float = 2_592_000.0) -> Mapping[str, Any]:
+        interval_seconds: float = 2_592_000.0,
+        ledger: str | None = None) -> Mapping[str, Any]:
     """Feed a series and return the engine's envelope plus this package's score.
 
     `interval_seconds` defaults to thirty days, because an operating review
     reports monthly and the model's `window` is a CEILING on how far back
     observations count rather than a lookback. Declaring a cadence the exporter
     does not run at is how a burn-in silently never completes.
+
+    WITH A LEDGER, THE FINDINGS BECOME CASES. The ledger's file keeps the
+    engine's case book: a finding opens a case on its unit and indicator unless
+    one is open already, this capture's ranking is attached to it, and each
+    later run records its check into every open case, which closes after the
+    model's declared run of clean captures (FINDINGS F15). A case counts
+    captures, so each is judged into the book ONCE: a series must be stamped,
+    and one ending no later than what the book has already judged is refused --
+    re-running the same files would otherwise count one clean month twice.
     """
     api = _engine()
     refusal = unusable(captures)
@@ -342,26 +379,44 @@ def run(model_path: str, captures: Sequence[Any], *,
         _loaded(model_path)
         return {"exit_code": x.INCOMPLETE, "findings": [], "not_checked": [],
                 "engine": None, "could_not_run": refusal}
+    judged = _latest_stamp(captures)
+    if ledger and judged is None:
+        _loaded(model_path)
+        return {"exit_code": x.INCOMPLETE, "findings": [], "not_checked": [],
+                "engine": None, "could_not_run": UNSTAMPED_FOR_CASES}
 
     try:
-        session = open_session(model_path, captures, interval_seconds=interval_seconds)
+        session = open_session(model_path, captures, interval_seconds=interval_seconds,
+                               ledger=ledger)
     except CaptureUnusable as refused:     # a reading the engine refused, by name
         return {"exit_code": x.INCOMPLETE, "findings": [], "not_checked": [],
                 "engine": None, "could_not_run": str(refused)}
+    if ledger:
+        already = _last_judged(api, session)
+        if already is not None and judged <= already:
+            return {"exit_code": x.INCOMPLETE, "findings": [], "not_checked": [],
+                    "engine": None, "could_not_run": (
+                        f"{ledger} has judged its cases as of {already.isoformat()}, "
+                        f"and this series ends at {judged.isoformat()}; a case counts "
+                        f"each capture once -- add the next capture, or run without "
+                        f"--ledger to read these again")}
     series = _series(captures)
     # JUDGED AS OF THE LATEST CAPTURE. A ladder ends at the clock, so its latest
     # reading is always "now"; a stamped series ends when it was taken, and read
     # at the wall clock its windows would slide away from it by however long ago
     # that was -- the same files judged differently on every day they were run.
-    judged = _latest_stamp(captures)
     with api.as_of(judged) if judged is not None else nullcontext():
         envelope = api.check(session)
         payload = envelope.to_dict() if hasattr(envelope, "to_dict") else dict(envelope)
         rankings: dict[str, Mapping[str, Any]] = {}
+        answers: dict[str, Any] = {}
         for finding in payload.get("findings", []):
             unit = finding.get("entity_id")
             if unit and unit not in rankings:
-                rankings[unit] = ranking(api, session, unit)
+                answers[unit] = api.hypothesize(session, unit)
+                rankings[unit] = ranking(api, session, unit, envelope=answers[unit])
+        cases = (_cases(api, session, payload.get("findings", []), answers)
+                 if ledger else None)
 
     dropped = session.dropped_declarations()
     kinds = _kinds(payload, dropped)
@@ -369,10 +424,14 @@ def run(model_path: str, captures: Sequence[Any], *,
     # ONE RANKING PER UNIT, beside each of its findings. Asked once per unit
     # because the verb answers about the unit, whichever of its readings fired,
     # and asked above, inside the same clock the check was read at.
-    findings = [{**finding, "ranking": rankings.get(finding.get("entity_id"))}
-                for finding in payload.get("findings", [])]
+    findings = []
+    for finding in payload.get("findings", []):
+        row = {**finding, "ranking": rankings.get(finding.get("entity_id"))}
+        if cases is not None:
+            row["case_id"] = cases["by_finding"].get(_case_key(finding))
+        findings.append(row)
 
-    return {
+    result = {
         "exit_code": x.code_for(kinds),
         "captures_fed": len(captures),
         "series_fed": len(series),
@@ -389,3 +448,119 @@ def run(model_path: str, captures: Sequence[Any], *,
         "why": [{"kind": k, "floor": fl, "because": why} for k, fl, why in x.reasons(kinds)],
         "unclassified": list(x.unclassified(kinds)),
     }
+    if cases is not None:
+        # Beside the verdict, never in it: a case is the record of a finding
+        # the run already scored.
+        result["cases"] = {key: value for key, value in cases.items()
+                           if key != "by_finding"}
+    return result
+
+
+#: What `run` says when it is asked to keep cases for a series with no stamps.
+UNSTAMPED_FOR_CASES = (
+    "a case counts captures by the instant each was taken, and these carry no "
+    "captured_at, so the series would be judged at the clock and every run "
+    "would count again; stamp every capture (`capture --captured-at`) to keep "
+    "cases")
+
+
+def _case_key(finding: Mapping[str, Any]) -> tuple[str, str]:
+    """The unit and indicator a finding is about: a case follows one of each."""
+    return (str(finding.get("entity_id")),
+            str(finding.get("problem_type") or "").split(":", 1)[-1])
+
+
+def _book(api: Any, session: Any) -> Mapping[str, Any]:
+    return api.case_book(session).to_dict().get("cases") or {}
+
+
+def _last_judged(api: Any, session: Any) -> datetime | None:
+    """The latest instant the book has judged: a case opening, or a check."""
+    seen = []
+    for case in _book(api, session).get("cases") or ():
+        seen.append(case.get("opened_at"))
+        seen += [entry.get("at") for entry in
+                 (case.get("stages") or {}).get("check") or ()]
+    instants = [_capture.instant(str(when)) for when in seen if when]
+    return max(instants) if instants else None
+
+
+def _cases(api: Any, session: Any, findings: Sequence[Mapping[str, Any]],
+           answers: Mapping[str, Any]) -> dict[str, Any]:
+    """Open a case per finding the book does not hold open, and attach this
+    capture's ranking to each case a finding named. The check itself has
+    already recorded into every open case -- the engine does that."""
+    held = {(case["entity_id"], case["indicator"]): case["case_id"]
+            for case in _book(api, session).get("cases") or ()
+            if case.get("status") == "open"}
+    opened = 0
+    declined: set[str] = set()
+    by_finding: dict[tuple[str, str], str] = {}
+    for finding in findings:
+        key = _case_key(finding)
+        if key not in held:
+            leg = api.open_case(session, key[0], key[1],
+                                basis=str(finding.get("problem_type") or "")
+                                ).to_dict().get("case") or {}
+            if not leg.get("case_id"):
+                declined |= {str(d.get("reason")) for d in leg.get("not_checked") or ()
+                             if d.get("reason")}
+                continue
+            held[key] = leg["case_id"]
+            opened += 1
+        by_finding[key] = held[key]
+    attached = 0
+    for key, case_id in sorted(set(by_finding.items())):
+        if key[0] in answers:
+            leg = api.attach_stage(session, case_id, "hypothesize",
+                                   answers[key[0]]).to_dict().get("case") or {}
+            attached += int((leg.get("checked") or {}).get("stages_attached") or 0)
+    book = _book(api, session)
+    return {"opened": opened, "open": book.get("open"), "resolved": book.get("resolved"),
+            "rankings_attached": attached, "declined": sorted(declined),
+            "by_finding": by_finding}
+
+
+def _existing_ledger(path: str) -> Any:
+    """A ledger that is already there. Opening a mistyped path would create an
+    empty one, and a confirmation filed into it would be lost where nobody looks."""
+    from pathlib import Path
+
+    if not Path(path).is_file():
+        raise LedgerUnreadable(f"there is no ledger at {path}; `detect --ledger` "
+                               f"writes one")
+    return _ledger(path)
+
+
+def confirm(ledger: str, case_id: str, *, cause: str, reading: str | None = None,
+            basis: str = "") -> Mapping[str, Any]:
+    """Record the cause a person confirmed, and the reading that settled it.
+
+    The engine reads it back against the last ranking the case held before it:
+    where the cause stood, and whether the reading that settled it was the one
+    that ranking named. A confirmation is not a surprise entry -- every case here
+    began with a finding, so a corpus written from them would be all detections.
+    """
+    api = _engine()
+    session = api.EngineSession(ledger=_existing_ledger(ledger))
+    reference: dict[str, str] = {"cause": cause, "basis": basis}
+    if reading:
+        reference["reading"] = reading
+    leg = api.attach_stage(session, case_id, "confirm",
+                           reference=reference).to_dict().get("case") or {}
+    declined = [{"reason": d.get("reason"), "detail": d.get("detail")}
+                for d in leg.get("not_checked") or ()]
+    rows = [row for row in (_book(api, session).get("confirmed") or {}).get("rows") or ()
+            if row.get("case_id") == case_id]
+    return {"exit_code": x.INCOMPLETE if declined else x.CLEAN,
+            "case_id": case_id, "reference": reference, "declined": declined,
+            "confirmed": rows[-1] if rows and not declined else None}
+
+
+def book(ledger: str) -> Mapping[str, Any]:
+    """Every case the ledger keeps, with the confirmations read back."""
+    api = _engine()
+    leg = _book(api, api.EngineSession(ledger=_existing_ledger(ledger)))
+    return {"exit_code": x.CLEAN,
+            **{key: leg.get(key) for key in ("opened", "open", "resolved",
+                                             "confirmed", "cases")}}

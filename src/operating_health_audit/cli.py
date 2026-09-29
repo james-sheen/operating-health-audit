@@ -92,8 +92,28 @@ def cmd_detect(args) -> int:
     except _capture.CaptureError as problem:
         return _could_not(str(problem))
     try:
-        return _emit(feeder.run(args.model, captures))
-    except (feeder.EngineUnavailable, feeder.ModelUnreadable) as problem:
+        return _emit(feeder.run(args.model, captures, ledger=args.ledger))
+    except (feeder.EngineUnavailable, feeder.ModelUnreadable,
+            feeder.LedgerUnreadable) as problem:
+        return _could_not(str(problem))
+
+
+def cmd_confirm(args) -> int:
+    """Record the cause a person confirmed on a case, and the reading that
+    settled it. The engine reads it back against the ranking the case held."""
+    from . import feeder
+    try:
+        return _emit(feeder.confirm(args.ledger, args.case_id, cause=args.cause,
+                                    reading=args.reading, basis=args.basis))
+    except (feeder.EngineUnavailable, feeder.LedgerUnreadable) as problem:
+        return _could_not(str(problem))
+
+
+def cmd_cases(args) -> int:
+    from . import feeder
+    try:
+        return _emit(feeder.book(args.ledger))
+    except (feeder.EngineUnavailable, feeder.LedgerUnreadable) as problem:
         return _could_not(str(problem))
 
 
@@ -156,7 +176,25 @@ def build_parser() -> argparse.ArgumentParser:
 
     t = verbs.add_parser("detect", help="feed a series of captures to the engine")
     t.add_argument("model"); t.add_argument("captures", nargs="+")
+    t.add_argument("--ledger", default=None, metavar="PATH",
+                   help="keep cases in this file: each finding opens one, each "
+                        "later capture is checked into it, and confirm records "
+                        "what settled it. Needs stamped captures")
     t.set_defaults(run=cmd_detect)
+
+    k = verbs.add_parser("confirm", help="record the cause a person confirmed")
+    k.add_argument("ledger"); k.add_argument("case_id")
+    k.add_argument("--cause", required=True, metavar="UNIT",
+                   help="the unit a person found to be the cause")
+    k.add_argument("--reading", default=None, metavar="UNIT.QUANTITY",
+                   help="the reading that settled it")
+    k.add_argument("--basis", required=True, metavar="TEXT",
+                   help="who says so, and on what record")
+    k.set_defaults(run=cmd_confirm)
+
+    b = verbs.add_parser("cases", help="every case a ledger keeps")
+    b.add_argument("ledger")
+    b.set_defaults(run=cmd_cases)
 
     g = verbs.add_parser("gate", help="refuse what is not ready, by name")
     g.add_argument("declaration"); g.add_argument("--capture")

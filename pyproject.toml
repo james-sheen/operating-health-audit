@@ -64,7 +64,12 @@ dependencies = ["presence-audit>=0.1.13,<0.3"]
 # 0.2.17: exactly those five tests fail and the other 223 pass there. (0.2.15
 # was forced the same way, when the loop began reading every decline through
 # the engine's own walker instead of a copy that read two of the four lists.)
-detect = ["arbiter-engine>=0.2.18,<0.3"]
+#
+# THE FLOOR IS 0.2.20, FORCED BY A FAILING CONTROL A FIFTH TIME. `confirm` reads a
+# confirmation back with the reading that settled it and whether the ranking
+# named it, which the case book reports from 0.2.20. Measured against 0.2.19:
+# exactly the two tests that read it fail, and the other 245 pass there.
+detect = ["arbiter-engine>=0.2.20,<0.3"]
 
 [project.urls]
 Homepage = "https://github.com/james-sheen/operating-health-audit"

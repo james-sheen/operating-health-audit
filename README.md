@@ -25,20 +25,32 @@ time is spaced thirty days apart instead, and `detect` says which under
 `timing`: a declared cadence and a measured one read the same in every figure
 downstream.
 
-**Beside each finding, what could explain it.** `detect` asks the engine's
-`hypothesize` about each unit with a finding and prints the answer beside it:
-the declared causes, each with its posterior, or the reason the engine declined.
-The model declares which way a failure travels -- into a department from the
-executives who lead it, into a division from the departments reporting to it --
-and no strength, so today the causes come without numbers. The rest of the loop
-runs too. A plan ranks the declared hiring rounds, alone and in pairs, by the
-findings each would bring. An executed hire is filed and graded against the next capture. The one
-declared coupling -- a department's headcount into its division's total, its
-gain withheld -- declines `insufficient_samples` until 121 monthly captures
-exist, which is ten years. And a case opened on a finding closes after two
-clean monthly captures. `gaps` locates what the model cannot explain -- on the
-export as shipped, every unit as detached -- and a case reads a confirmed cause
-back against the ranking it held before.
+**Beside each finding, what could explain it, and the reading to take first.**
+`detect` asks the engine's `hypothesize` about each unit with a finding and
+prints the answer beside it: the declared causes, each with its posterior, the
+reason the engine declined, and `most_discriminating` -- the one reading whose
+value would most change the ranking. The model declares which way a failure
+travels -- into a department from the executives who lead it, into a division
+from the departments reporting to it -- and no strength, so the causes come
+without numbers and the reading is chosen by the shape of the declared graph:
+for a division, the headcount of the department two executives lead, which
+splits its five candidates three to two.
+
+**With `--ledger`, a finding becomes a case.** The file keeps the engine's case
+book. Each finding opens a case on its unit and indicator unless one is open,
+its ranking is attached, each later capture is checked into it, and it closes
+after two clean monthly captures. `confirm` records the cause a person found and
+the reading that settled it, and `cases` prints the book, each confirmed cause
+read back against the ranking its case held before. A case counts captures, so
+the series must be stamped and each capture is judged into the book once.
+
+**The rest of the loop runs in `tests/test_the_loop_runs.py`, not in a verb.** A
+plan ranks the declared hiring rounds, alone and in pairs, by the findings each
+would bring, and an executed hire is filed and graded against the next capture.
+The one declared coupling, a department's headcount into its division's total
+with its gain withheld, declines `insufficient_samples` until 121 monthly captures
+exist, which is ten years. `gaps` locates what the model cannot
+explain -- on the export as shipped, every unit as detached.
 
 ## What it answers on day one
 
@@ -58,6 +70,10 @@ operating-health-audit capture     <wide.csv> --out <capture>    produce an expo
 operating-health-audit presence    <declaration> <capture>       the three-valued answer
 operating-health-audit regression  <before> <after>              two exports compared
 operating-health-audit detect      <model> <capture>...          feed a series to the engine
+                                   [--ledger PATH]               keep cases in this file
+operating-health-audit confirm     <ledger> <case> --cause UNIT  record what settled a case
+                                   [--reading UNIT.QUANTITY] --basis TEXT
+operating-health-audit cases       <ledger>                      every case a ledger keeps
 ```
 
 ## Exit codes
@@ -73,6 +89,9 @@ carries no value for them -- `throughput` on both processes, and `margin_pct` on
 the engineering and support departments, whose margin it does not report -- so
 the engine declines them `missing_property`. The worse wins. With those columns
 supplied, the same run exits `1`.
+
+`confirm` and `cases` exit `0`, or `2` with the reason when the ledger or the
+case is not there, or the confirmation names no cause.
 
 Composing nothing is `0` here and `2` in the core, deliberately. The core
 composes stage results, so no stage reporting means nothing ran. This composes

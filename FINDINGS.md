@@ -183,6 +183,22 @@ and measured, the four `missing_property` are `throughput` on both processes and
 readings. An engine finding now scores `1`, whatever its problem type; the
 example still exits `2`, for the reason its `why` names.
 
+## In this package, at 0.1.7
+
+**F15. `detect` dropped the reading its ranking named, and kept no case.** The
+engine names the one reading its ranking rests on most, `most_discriminating`,
+and `detect` printed the causes and the declines and not that. This model
+declares no strength, so every cause carried `None` beside `cpt_missing` -- a
+division's finding listed five causes and nothing to do -- while the engine had
+named the headcount of the department two executives lead, which splits the five
+three to two. And `detect` opened no case: every run was a fresh session, no verb
+could record the cause a person confirmed, and the README described the rest of
+the loop as running, beside a verb table with no verb that ran it. Found by
+re-reading the phase that built those fields against the document it was built
+from. `detect` prints the reading, `--ledger` keeps the cases, `confirm` and
+`cases` record and read them, and the README says which parts run only in the
+loop test.
+
 ## A claim this project made and had to withdraw
 
 **Reading `AXIOM_MINIMUMS` and concluding that nothing can answer from a single

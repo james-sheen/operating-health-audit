@@ -48,7 +48,18 @@ def test_a_department_is_explained_by_the_executives_who_lead_it(result):
 
 def test_a_unit_outside_the_declared_structure_says_so_by_name(result):
     ranking = _by_unit(result)["proc-sales-cycle"]
-    assert ranking == {"causes": [], "declined": ["not_identifiable"]}
+    assert ranking == {"causes": [], "most_discriminating": None,
+                       "declined": ["not_identifiable"]}
+
+
+def test_the_reading_to_take_first_is_printed_beside_the_causes(result):
+    """The engine names the one reading its ranking rests on most. This package
+    kept the causes and dropped it (FINDINGS F15); with no strength declared the
+    causes carry no number, so that reading was the only thing to act on. It is
+    a value a person can read -- a leader's tenure -- never a relation."""
+    named = _by_unit(result)["dept-sales"]["most_discriminating"]
+    assert named == {"entity": "exec-cro", "reading": "exec-cro.tenure_years",
+                     "basis": "structure", "splits": [1, 1]}
 
 
 def test_every_finding_on_one_unit_carries_the_same_ranking(result):

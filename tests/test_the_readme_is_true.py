@@ -119,3 +119,27 @@ def test_the_exit_code_sentence_matches_the_contract() -> None:
     assert "`0` clean, `1` findings, `2` could-not-complete" in README
     assert (x.CLEAN, x.FINDINGS, x.INCOMPLETE) == (0, 1, 2)
     assert x.code_for([]) == x.CLEAN, "the README says composing nothing is 0 here"
+
+
+def test_the_reading_the_readme_says_a_division_gets_is_the_one_printed() -> None:
+    """The README says a division's finding names the headcount of the department
+    two executives lead, and that it splits five candidates three to two."""
+    _code, out = _run("detect", str(MODEL), str(CAPTURE))
+    [ranking] = {json.dumps(f["ranking"], sort_keys=True) for f in out["findings"]
+                 if f["entity_id"] == "div-commercial"}
+    named = json.loads(ranking)["most_discriminating"]
+    assert named == {"entity": "dept-sales", "reading": "dept-sales.headcount",
+                     "basis": "structure", "splits": [3, 2]}
+    assert "the headcount of the department two executives lead" in " ".join(
+        README.split())
+    assert "splits its five candidates three to two" in " ".join(README.split())
+
+
+def test_a_case_closes_after_the_number_of_captures_the_readme_says() -> None:
+    """Read off the model, which declares it, rather than restated here."""
+    import yaml
+
+    declared = yaml.safe_load(MODEL.read_text())["domain"]["cases"]
+    words = {1: "one", 2: "two", 3: "three"}
+    assert (f"closes after {words[declared['consecutive_checks']]} clean monthly "
+            f"captures") in " ".join(README.split())

@@ -6,6 +6,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **`detect` prints the reading to take first.** Beside each finding's causes,
+  `ranking.most_discriminating` names the one reading the engine's ranking rests
+  on most -- here, by the declared graph's shape. It was computed and dropped
+  (FINDINGS F15).
+- **`detect --ledger PATH` keeps cases.** Each finding opens a case on its unit
+  and indicator unless one is open, its ranking is attached, and each later
+  capture is checked into it until the model's declared run of clean captures
+  closes it. Each finding carries its `case_id`. Needs stamped captures, and a
+  series the ledger has already judged is refused.
+- **`confirm` and `cases`.** `confirm <ledger> <case> --cause UNIT --reading
+  UNIT.QUANTITY --basis TEXT` records what settled a case; `cases <ledger>`
+  prints the book, each confirmation read back against the ranking before it.
+
+### Changed
+
+- **The engine floor is 0.2.20**, which reads a confirmation's reading back
+  against the one the ranking named.
+
 ## [0.1.7] — 2026-09-28
 
 ### Fixed
