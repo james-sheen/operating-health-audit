@@ -143,3 +143,15 @@ def test_a_case_closes_after_the_number_of_captures_the_readme_says() -> None:
     words = {1: "one", 2: "two", 3: "three"}
     assert (f"closes after {words[declared['consecutive_checks']]} clean monthly "
             f"captures") in " ".join(README.split())
+
+
+def test_the_install_line_names_the_release_this_is():
+    """The package is not on PyPI, where `pip install operating-health-audit` answers
+    404, and the quick start's examples live in the repository, not in the package. So
+    the README clones a release tag -- and the tag it names is this version, or the next
+    release would leave it pointing at the last one."""
+    from operating_health_audit import __version__
+
+    assert (f"git clone --branch v{__version__} "
+            "https://github.com/james-sheen/operating-health-audit") in README
+    assert "pip install operating-health-audit" not in README

@@ -103,7 +103,9 @@ the audit exists to be able to give.
 ## Quick start
 
 ```bash
-pip install operating-health-audit[detect]
+git clone --branch v0.1.8 https://github.com/james-sheen/operating-health-audit
+cd operating-health-audit
+pip install '.[detect]'     # not on PyPI: this installs the release you cloned
 
 operating-health-audit gate      examples/operating.declaration.json
 operating-health-audit presence  examples/operating.declaration.json examples/acme.capture.json
