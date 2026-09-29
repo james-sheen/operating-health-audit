@@ -397,9 +397,13 @@ class TestAConfirmationSaysWhereTheCauseWasRanked:
                 reference={"cause": named, "basis": "the October review"}).to_dict()
         assert attached["case"]["checked"]["stages_attached"] == 1
         confirmed = api.case_book(session).to_dict()["cases"]["confirmed"]
-        assert confirmed["rows"] == [{
-            "case_id": case_id, "cause": named, "rank": causes.index(named) + 1,
-            "of": 2, "named_reading_settled_it": True}]
+        # BY LOOKUP. A row is a record the engine may add keys to in a patch
+        # release -- 0.2.20 added three -- and an equality on the whole row
+        # broke on the first one.
+        [row] = confirmed["rows"]
+        assert (row["case_id"], row["cause"], row["rank"], row["of"],
+                row["named_reading_settled_it"]) == (
+            case_id, named, causes.index(named) + 1, 2, True)
         assert (confirmed["confirmations"], confirmed["ranked"],
                 confirmed["not_ranked"]) == (1, 1, 0)
         assert unpublished_reasons(attached) == []
