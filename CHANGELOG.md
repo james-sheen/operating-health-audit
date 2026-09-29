@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.9] — 2026-09-29
+
 ### Changed
 
 - **A passing state the model gives no `timeout:` is reported, not timed.** The
