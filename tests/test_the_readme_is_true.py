@@ -38,17 +38,20 @@ def test_the_day_one_finding_count_is_what_the_readme_says() -> None:
         f"the README says {claimed.group(1)} and the run produces {counted}")
 
 
-def test_the_shipped_example_exits_2_for_the_reason_the_readme_gives() -> None:
-    """Its findings score `1`, and four declared checks the export carries no
-    value for score `2`; the worse wins. This asserted the code alone, with a
-    reason in its message that was not the reason: every finding was scored
-    `unclassified`, which floors at `2` by itself, so the check held for a cause
-    it never read (FINDINGS F14)."""
+def test_the_shipped_example_exits_2_for_the_reasons_the_readme_gives() -> None:
+    """Its findings score `1`; four declared checks the export carries no value
+    for, and two passing states the model gives no `timeout:`, score `2`; the
+    worse wins. This asserted the code alone, with a reason in its message that
+    was not the reason: every finding was scored `unclassified`, which floors at
+    `2` by itself, so the check held for a cause it never read (FINDINGS F14).
+    The second reason arrived with engine 0.2.22, which declines to time such a
+    state where it had timed it against five minutes nobody declared."""
     code, out = _run("detect", str(MODEL), str(CAPTURE))
     assert code == out["exit_code"] == 2
     floors = {row["kind"]: row["floor"] for row in out["why"]}
     assert floors["engine_finding"] == 1 and floors["missing_property"] == 2
-    assert [k for k, floor in floors.items() if floor == 2] == ["missing_property"]
+    assert sorted(k for k, floor in floors.items() if floor == 2) == [
+        "missing_config", "missing_property"]
     assert out["unclassified"] == []
     unanswered = {((d.get("entity") or d.get("entity_id")), d.get("indicator"))
                   for d in out["not_checked"] if d["reason"] == "missing_property"}
@@ -58,6 +61,12 @@ def test_the_shipped_example_exits_2_for_the_reason_the_readme_gives() -> None:
                           ("dept-support", "margin_pct")}
     for name in {indicator for _, indicator in unanswered}:
         assert f"`{name}`" in README, f"the README does not name {name}"
+    untimed = {((d.get("entity") or d.get("entity_id")), d.get("indicator"))
+               for d in out["not_checked"] if d["reason"] == "missing_config"}
+    assert untimed == {("dept-marketing", "status"), ("proj-crm", "status")}
+    for word in ("`missing_config`", "`transient:`", "`timeout:`",
+                 "`restructuring`", "`at_risk`"):
+        assert word in README, f"the README does not name {word}"
 
 
 def test_the_captures_the_coupling_waits_for_are_the_engines() -> None:

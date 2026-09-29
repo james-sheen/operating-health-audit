@@ -69,7 +69,13 @@ dependencies = ["presence-audit>=0.1.13,<0.3"]
 # confirmation back with the reading that settled it and whether the ranking
 # named it, which the case book reports from 0.2.20. Measured against 0.2.19:
 # exactly the two tests that read it fail, and the other 245 pass there.
-detect = ["arbiter-engine>=0.2.20,<0.3"]
+#
+# THE FLOOR IS 0.2.22, FORCED BY A FAILING CONTROL A SIXTH TIME. The shipped model
+# lists passing states under `transient:` with no `timeout:`, and from 0.2.22 the
+# engine declines such a state `missing_config` where it had timed it against five
+# minutes nobody declared; the README says so and a test reads it. Measured
+# against 0.2.21: exactly that test fails, and the other 256 pass there.
+detect = ["arbiter-engine>=0.2.22,<0.3"]
 
 [project.urls]
 Homepage = "https://github.com/james-sheen/operating-health-audit"

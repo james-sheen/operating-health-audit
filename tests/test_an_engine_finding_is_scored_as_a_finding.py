@@ -11,6 +11,8 @@ problem type is still refused a score, by name.
 """
 from __future__ import annotations
 
+import re
+
 from conftest import CAPTURE, MODEL
 
 from operating_health_audit import capture, exit_contract as x, feeder
@@ -35,10 +37,24 @@ def _with_every_column():
                           source="the shipped capture, every declared column filled")
 
 
+def _with_every_timeout(tmp_path):
+    """The shipped model with a `timeout:` on each passing state. It declares
+    none -- how long a restructuring may last is the review's to say -- so from
+    engine 0.2.22 a unit in one is declined `missing_config`, not timed. The
+    number is this fixture's, like the columns `_with_every_column` fills."""
+    text = MODEL.read_text()
+    timed, count = re.subn(r"^(\s*)(transient: \[[^\]]*\])$", r"\1\2\n\1timeout: 90d",
+                           text, flags=re.MULTILINE)
+    assert count == text.count("transient:") == 3, "a passing state was left untimed"
+    path = tmp_path / "operating.model.timed.yaml"
+    path.write_text(timed)
+    return path
+
+
 class TestTheExitCode:
 
-    def test_a_run_that_finds_something_and_answers_everything_exits_1(self):
-        out = feeder.run(str(MODEL), [_with_every_column()])
+    def test_a_run_that_finds_something_and_answers_everything_exits_1(self, tmp_path):
+        out = feeder.run(str(_with_every_timeout(tmp_path)), [_with_every_column()])
         assert out["findings"], "the fixture finds nothing, so this checks nothing"
         assert out["exit_code"] == x.FINDINGS
         floors = {row["kind"]: row["floor"] for row in out["why"]}

@@ -8,6 +8,8 @@ first on 0.1.14, when one arm could never answer at this cadence; the table was
 re-measured when 0.2.11 made it answer, and several of its old rows had moved.
 Re-measured on 2026-09-27 against 0.2.15 and presence-audit 0.2.1, with the
 model's coupling and planning objective declared: every row is unchanged.
+Re-measured on 2026-09-29 against 0.2.22 and presence-audit 0.2.5: every finding
+is unchanged, and four rows carry declines 0.2.21 did not report (below).
 
 ## The one-line answer
 
@@ -21,15 +23,25 @@ One capture per month, the cadence the model declares.
 
 | captures | findings | declines | what changed |
 |---|---|---|---|
-| 1 | **11** | 80 | 4 `threshold_exceeded`, 3 `threshold_warning`, 4 `declared_bad_state` |
-| 2 | 7 | 80 | the four bad states walked off by the fixture |
+| 1 | **11** | 82 | 4 `threshold_exceeded`, 3 `threshold_warning`, 4 `declared_bad_state` |
+| 2 | 7 | 89 | the four bad states walked off by the fixture |
 | 3 | 16 | 80 | MONOTONICITY reaches its floor: 17 `insufficient_samples` → 2 |
 | 4 | **18** | 80 | 11 `monotonicity_reversal` findings appear |
-| 10 | 18 | 64 | STABILITY resolves completely: 16 declines → 0 |
-| 30 | 18 | 43 | HOMEOSTASIS resolves completely: 21 declines → 0 |
+| 10 | 18 | 73 | STABILITY reaches its floor: 16 `insufficient_samples` → 0 |
+| 30 | 18 | 52 | HOMEOSTASIS resolves completely: 21 declines → 0 |
 
 103 invariants are checked at every row. The count does not grow; what changes
 is how many of them can answer.
+
+**A unit in a passing state declines until the model says how long it may
+last.** The model lists `restructuring` and `at_risk` under `transient:` with no
+`timeout:` -- how long a restructuring may take is the review's to say -- and
+the engine declines to time such a state `missing_config`, where until 0.2.21 it
+timed it against five minutes nobody declared. Two units sit in one on the
+shipped capture, and the fixture walks all nine into one at the second capture
+of every four -- the second, tenth and thirtieth rows. So 2 of the first row's
+declines are these, and 9 of each of those three rows'. No history removes them;
+a declared `timeout:` does.
 
 **THE FINDINGS AFTER n=1 ARE AN ARTIFACT OF THE FIXTURE AND NOT A FACT ABOUT
 ACME.** `make_series.py` walks every numeric by a fixed fraction each step and

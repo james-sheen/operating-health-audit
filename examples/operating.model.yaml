@@ -235,6 +235,10 @@ domain:
         type: NUMERIC
         axioms: [HOMEOSTASIS]
         window: 3650d
+      # No `timeout:` on any passing state here: how long a restructuring or an
+      # at-risk project may last is the review's to declare, and no number in this
+      # example says. The engine declines such a state `missing_config` rather
+      # than timing it; a real engagement writes its own and names the source.
       - name: status
         type: STATE
         axioms: [STABILITY]

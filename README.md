@@ -89,8 +89,13 @@ which, rather than as a traceback exiting `1`.
 eleven findings score `1`. Four declared checks score `2`, because the export
 carries no value for them -- `throughput` on both processes, and `margin_pct` on
 the engineering and support departments, whose margin it does not report -- so
-the engine declines them `missing_property`. The worse wins. With those columns
-supplied, the same run exits `1`.
+the engine declines them `missing_property`. Two more score `2` because the
+model does not say how long a passing state may last: the marketing department
+is `restructuring` and the CRM project `at_risk`, states the model lists under
+`transient:` with no `timeout:`, so the engine declines their `status`
+`missing_config` rather than timing it against a number nobody gave. The worse
+wins. With those columns supplied and a `timeout:` declared on each passing
+state, the same run exits `1`.
 
 `confirm` and `cases` exit `0`, or `2` with the reason when the ledger or the
 case is not there, or the confirmation names no cause.
@@ -121,6 +126,10 @@ back detached, and that is the correct answer about it.
 - **It does not know whether a state is bad.** The model declares `normal:`,
   `transient:` and `bad:` sets and the engine judges against them. Stage 1
   reports a state change in either direction and scores it clean.
+- **It does not know how long a state may last.** A `transient:` state is one a
+  unit passes through, and how long it may take is `timeout:`, a fact about the
+  organisation under review. The shipped model declares none, so a unit in such
+  a state is reported unchecked rather than timed.
 - **It does not invent structure.** A wide CSV has nowhere to put a reporting
   line, so `capture` produces an export with no edges and the audit says every
   unit is detached. Deriving an org chart from an id prefix would be deriving a

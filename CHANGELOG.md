@@ -6,6 +6,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **A passing state the model gives no `timeout:` is reported, not timed.** The
+  shipped model lists `restructuring` and `at_risk` under `transient:` and says
+  nothing about how long either may last. Engine 0.2.22 declines such a state
+  `missing_config` where it had timed it against five minutes nobody declared,
+  so `detect` on the shipped capture declines two more checks -- the `status` of
+  the marketing department and of the CRM project -- and still exits `2`. The
+  README says why; `docs/burn-in.md` is re-measured, every finding unchanged and
+  four rows carrying the new declines; and the test of a run that answers
+  everything declares a timeout of its own.
+- **The engine floor is 0.2.22**, which is where that decline begins.
+
 ## [0.1.8] — 2026-09-29
 
 ### Added
