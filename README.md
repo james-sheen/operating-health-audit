@@ -41,7 +41,10 @@ book. Each finding opens a case on its unit and indicator unless one is open,
 its ranking is attached, each later capture is checked into it, and it closes
 after two clean monthly captures. `confirm` records the cause a person found and
 the reading that settled it, and `cases` prints the book, each confirmed cause
-read back against the ranking its case held before. A case counts captures, so
+read back against the ranking its case held before. This model declares no
+strength, so that rank is hop order and then entity id, and each row says so
+(`ranked_by: hops`): a first place here is not evidence the ranking was right,
+and the book counts first places a posterior decided apart. A case counts captures, so
 the series must be stamped and each capture is judged into the book once.
 
 **The rest of the loop runs in `tests/test_the_loop_runs.py`, not in a verb.** A

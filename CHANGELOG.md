@@ -6,6 +6,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **`cases` says what each confirmed rank rested on.** Engine 0.2.23 adds
+  `ranked_by`, `named_by` and `settling_entity_was_named` to each confirmed row,
+  and counts the first places a posterior decided apart from the rest. This model
+  declares no strength, so every rank is hop order and then entity id, and the
+  book now says so. A review that settles a department's finding on an
+  executive's rating, where the ranking named the same executive's tenure, is
+  counted as having looked where the ranking pointed.
+- **The engine floor is 0.2.23**, which is where those fields begin.
+
+### Fixed
+
+- Without the engine, Stage 2 said `pip install operating-health-audit[detect]`,
+  which answers 404: the package is not on PyPI. It now gives the README's
+  install, from a clone of the release.
+- A test comment still said the reading a ranking names is a relation (FINDINGS
+  F13). From engine 0.2.19 it is the type's first declared value, and the test
+  pins it.
+
 ## [0.1.9] — 2026-09-29
 
 ### Changed

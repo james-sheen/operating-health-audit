@@ -11,6 +11,8 @@ import re
 import subprocess
 import sys
 
+import pytest
+
 from conftest import AS_SHIPPED, CAPTURE, DECLARATION, MODEL, ROOT
 
 README = (ROOT / "README.md").read_text()
@@ -164,3 +166,17 @@ def test_the_install_line_names_the_release_this_is():
     assert (f"git clone --branch v{__version__} "
             "https://github.com/james-sheen/operating-health-audit") in README
     assert "pip install operating-health-audit" not in README
+
+
+def test_a_missing_engine_is_told_the_readmes_install(monkeypatch):
+    """The same 404, from the other door: Stage 2 without the engine said
+    `pip install operating-health-audit[detect]`, which the README avoids."""
+    import sys
+
+    from operating_health_audit import feeder
+
+    monkeypatch.setitem(sys.modules, "arbiter_engine", None)
+    with pytest.raises(feeder.EngineUnavailable) as refused:
+        feeder._engine()
+    assert "pip install '.[detect]'" in str(refused.value)
+    assert "pip install operating-health-audit" not in str(refused.value)

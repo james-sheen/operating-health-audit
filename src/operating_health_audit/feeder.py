@@ -170,9 +170,11 @@ def _engine():
     try:
         from arbiter_engine import api
     except ImportError as problem:
+        # The README's install, not PyPI's: the package is not on the index, and
+        # `pip install operating-health-audit` answers 404 there.
         raise EngineUnavailable(
-            f"Stage 2 needs the engine: pip install operating-health-audit[detect] "
-            f"({problem})") from None
+            f"Stage 2 needs the engine, which the [detect] extra installs: in a "
+            f"clone of this release, pip install '.[detect]' ({problem})") from None
     return api
 
 

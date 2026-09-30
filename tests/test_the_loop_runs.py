@@ -115,8 +115,10 @@ class TestEveryStageAnswersOrDeclinesByName:
         named = leg["most_discriminating"]
         assert named["entity"] in LEADERS
         assert (named["basis"], named["splits"]) == ("structure", [1, 1])
-        # `reading` is not pinned: the engine names the type's first declared
-        # indicator, which on this model is a relation (FINDINGS F13).
+        # The type's first declared VALUE: `leads`, a relation, is listed before
+        # it, and from engine 0.2.19 a relation is never the reading named
+        # (FINDINGS F13). The floor is above that, so it is pinned.
+        assert named["reading"] == f"{named['entity']}.tenure_years"
         assert "faults_visible_along_channels" in leg["assumptions"]
         assert "read_at" not in leg
         assert {c["cause"]: c["path"] for c in leg["candidates"]} == {
@@ -394,7 +396,8 @@ class TestAConfirmationSaysWhereTheCauseWasRanked:
         with api.as_of(AT + timedelta(minutes=5)):
             attached = api.attach_stage(
                 session, case_id, "confirm",
-                reference={"cause": named, "basis": "the October review"}).to_dict()
+                reference={"cause": named, "reading": f"{named}.performance_rating",
+                           "basis": "the October review"}).to_dict()
         assert attached["case"]["checked"]["stages_attached"] == 1
         confirmed = api.case_book(session).to_dict()["cases"]["confirmed"]
         # BY LOOKUP. A row is a record the engine may add keys to in a patch
@@ -406,6 +409,15 @@ class TestAConfirmationSaysWhereTheCauseWasRanked:
             case_id, named, causes.index(named) + 1, 2, True)
         assert (confirmed["confirmations"], confirmed["ranked"],
                 confirmed["not_ranked"]) == (1, 1, 0)
+        # Engine 0.2.23 says what that rank rested on: no strength is declared
+        # here, so hop order and then entity id, and the reading was named by
+        # the graph's shape -- a first place here is no posterior's.
+        assert (row["ranked_by"], row["named_by"]) == ("hops", "structure")
+        assert confirmed["ranked_by_posterior"] == 0
+        # The review settled it on the executive's rating; the ranking named
+        # the same executive's tenure. Not the reading named, and the entity.
+        assert (row["settling_reading_was_named"],
+                row["settling_entity_was_named"]) == (False, True)
         assert unpublished_reasons(attached) == []
 
 
