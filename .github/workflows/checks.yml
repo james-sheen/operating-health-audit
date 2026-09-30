@@ -54,7 +54,7 @@ jobs:
           code=$?
           set -e
           test "$code" = "2" || { echo "expected 2, got $code"; cat out.json; exit 1; }
-          grep -q "operating-health-audit\[detect\]" out.json
+          grep -qF "pip install '.[detect]'" out.json || { echo "the README's install is not given"; cat out.json; exit 1; }
 
   conformance:
     # The core's own kit, run the way a consumer runs it.
