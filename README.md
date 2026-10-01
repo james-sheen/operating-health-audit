@@ -25,17 +25,21 @@ time is spaced thirty days apart instead, and `detect` says which under
 `timing`: a declared cadence and a measured one read the same in every figure
 downstream.
 
-**Beside each finding, what could explain it, and the reading to take first.**
-`detect` asks the engine's `hypothesize` about each unit with a finding and
-prints the answer beside it: the declared causes, each with its posterior, what
-each cause's own reading said under `own_readings` -- `None` where the engine
-could not say -- the reason the engine declined, and `most_discriminating` -- the
-one reading whose value would most change the ranking. The model declares which way a failure
-travels -- into a department from the executives who lead it, into a division
-from the departments reporting to it -- and no strength, so the causes come
-without numbers and the reading is chosen by the shape of the declared graph:
-for a division, the headcount of the department two executives lead, which
-splits its five candidates three to two.
+**Beside each finding, what could explain it, where the walk stopped, and the
+reading to take first.** `detect` asks the engine's `hypothesize` about each unit
+with a finding and prints the answer beside it: the declared causes, each with
+its posterior, what each cause's own reading said under `own_readings` -- `None`
+where the engine could not say -- the reason the engine declined, the `walk`, and
+`most_discriminating`. The walk gives its `state`, the `frontier` where the
+visible fault stops, and the causes still `open` with what each needs; the
+reading to take first is one an open cause still needs, and `None` when nothing
+is open. The model declares which way a failure travels -- into a department
+from the executives who lead it, into a division from the departments reporting
+to it -- and no strength, so the causes come without numbers, in the order the
+walk stood them. On the shipped capture the sales department is traced to its
+two executives and names no reading; the commercial division is partly traced,
+and the reading named is the marketing executive's rating, which one capture is
+too few samples to judge.
 
 **With `--ledger`, a finding becomes a case.** The file keeps the engine's case
 book. Each finding opens a case on its unit and indicator unless one is open,

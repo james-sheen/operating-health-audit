@@ -221,6 +221,19 @@ shipped ratings, 6.2 and 5.1, sit outside the `[0, 5]` it gave
 ratings stay as the case study ships them; whether the scale is five is a
 question for whoever states it.
 
+## In this package, at 0.1.11
+
+**F18. The reading to take first was one already taken.** On the shipped
+capture both executives leading sales read over their bound -- `exec-cro` 22
+direct reports over a critical 20, `exec-vp-sales` 18 over a warning 15 -- and
+`detect` named `exec-cro.tenure_years` as the reading to take first: engine
+0.2.26 chose among every cause, read or not, by the shape of the declared graph.
+Found by an outside direction document's gate, reproduced by running it. From
+engine 0.2.27 a ranking names only a reading a cause still needs, so the sales
+department's walk is traced to its two executives and names none, and `detect`
+prints the walk beside the causes: its state, where the visible fault stops, and
+what is still open.
+
 ## A claim this project made and had to withdraw
 
 **Reading `AXIOM_MINIMUMS` and concluding that nothing can answer from a single

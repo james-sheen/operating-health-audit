@@ -81,7 +81,13 @@ dependencies = ["presence-audit>=0.1.13,<0.3"]
 # on this model -- and whether the reading that settled it sat on the entity the
 # ranking named, which the case book reports from 0.2.23. Measured against
 # 0.2.22: exactly that test fails, and the other 257 pass there.
-detect = ["arbiter-engine>=0.2.23,<0.3"]
+#
+# THE FLOOR IS 0.2.27, FORCED BY A FAILING CONTROL AN EIGHTH TIME. `detect` prints
+# where each walk stopped, and the tests read the walk's state, frontier and open
+# causes, the reading named only while a cause is open, and a confirmed rank
+# ordered by standing -- all from 0.2.27. Measured against 0.2.26: exactly those
+# ten tests fail, and the other 252 pass there.
+detect = ["arbiter-engine>=0.2.27,<0.3"]
 
 [project.urls]
 Homepage = "https://github.com/james-sheen/operating-health-audit"

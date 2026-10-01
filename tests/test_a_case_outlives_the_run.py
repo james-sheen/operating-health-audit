@@ -137,21 +137,23 @@ class TestACaseOutlivesTheRun:
 class TestAPersonSaysWhatSettledIt:
 
     def test_the_confirmation_is_read_back_against_the_ranking(self, months, tmp_path):
-        """A division's finding: the ranking names the department two executives
-        lead, by its headcount. A person reads it, confirms that department,
-        and says that reading settled it."""
+        """A division's finding: its walk is partly traced, and the one reading
+        it still needs is the marketing executive's rating. A person reads it,
+        confirms that executive, and says that reading settled it."""
         from operating_health_audit import feeder
 
         ledger = str(tmp_path / "ledger.db")
         result = feeder.run(str(MODEL), months[:1], ledger=ledger)
         [finding] = [f for f in result["findings"] if f["entity_id"] == "div-commercial"]
         named = finding["ranking"]["most_discriminating"]["reading"]
-        assert named == "dept-sales.headcount"
-        confirmed = feeder.confirm(ledger, finding["case_id"], cause="dept-sales",
+        assert named == "exec-cmo.performance_rating"
+        confirmed = feeder.confirm(ledger, finding["case_id"], cause="exec-cmo",
                                    reading=named, basis="the October review")
         assert confirmed["exit_code"] == 0 and confirmed["declined"] == []
         row = confirmed["confirmed"]
-        assert (row["rank"], row["of"]) == (2, 5)
+        # Ranked by standing: two executives on the frontier, two departments
+        # on the trail, and the open one last.
+        assert (row["rank"], row["of"], row["ranked_by"]) == (5, 5, "standing")
         assert (row["settling_reading"], row["settling_reading_was_named"]) == (
             named, True)
         book = feeder.book(ledger)["confirmed"]
@@ -191,8 +193,9 @@ class TestTheVerbs:
         code, out = _cli("detect", str(MODEL), str(CAPTURE), "--ledger", ledger)
         assert code == out["exit_code"] == 2      # the shipped example's own reason
         case_id = _case(out, "div-commercial", "status")
-        code, out = _cli("confirm", ledger, case_id, "--cause", "dept-sales",
-                         "--reading", "dept-sales.headcount", "--basis", "a review")
+        # The reading the division's walk names: the one cause still open.
+        code, out = _cli("confirm", ledger, case_id, "--cause", "exec-cmo",
+                         "--reading", "exec-cmo.performance_rating", "--basis", "a review")
         assert code == 0 and out["confirmed"]["settling_reading_was_named"] is True
         code, out = _cli("cases", ledger)
         assert code == 0 and out["confirmed"]["confirmations"] == 1

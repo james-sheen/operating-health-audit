@@ -132,18 +132,32 @@ def test_the_exit_code_sentence_matches_the_contract() -> None:
     assert x.code_for([]) == x.CLEAN, "the README says composing nothing is 0 here"
 
 
-def test_the_reading_the_readme_says_a_division_gets_is_the_one_printed() -> None:
-    """The README says a division's finding names the headcount of the department
-    two executives lead, and that it splits five candidates three to two."""
-    _code, out = _run("detect", str(MODEL), str(CAPTURE))
+def _ranking(out, unit):
     [ranking] = {json.dumps(f["ranking"], sort_keys=True) for f in out["findings"]
-                 if f["entity_id"] == "div-commercial"}
-    named = json.loads(ranking)["most_discriminating"]
-    assert named == {"entity": "dept-sales", "reading": "dept-sales.headcount",
-                     "basis": "structure", "splits": [3, 2]}
-    assert "the headcount of the department two executives lead" in " ".join(
-        README.split())
-    assert "splits its five candidates three to two" in " ".join(README.split())
+                 if f["entity_id"] == unit}
+    return json.loads(ranking)
+
+
+def test_the_walks_the_readme_describes_are_the_ones_printed() -> None:
+    """The README says the sales department is traced to its two executives and
+    names no reading, and the division is partly traced and names the marketing
+    executive's rating, for too few samples."""
+    _code, out = _run("detect", str(MODEL), str(CAPTURE))
+    words = " ".join(README.split())
+    sales = _ranking(out, "dept-sales")
+    assert sales["walk"]["state"] == "traced"
+    assert len(sales["walk"]["frontier"]) == 2 and sales["most_discriminating"] is None
+    assert "the sales department is traced to its two executives and names no reading" in words
+    division = _ranking(out, "div-commercial")
+    assert division["walk"]["state"] == "partly_traced"
+    assert division["most_discriminating"] == {
+        "entity": "exec-cmo", "reading": "exec-cmo.performance_rating",
+        "basis": "only_open"}
+    assert [need["reason"] for entry in division["walk"]["open"]
+            for need in entry["needs"]
+            if need["reading"] == "exec-cmo.performance_rating"] == ["insufficient_samples"]
+    assert "the commercial division is partly traced" in words
+    assert "the marketing executive's rating, which one capture is too few samples" in words
 
 
 def test_a_case_closes_after_the_number_of_captures_the_readme_says() -> None:

@@ -104,36 +104,56 @@ class TestEveryStageAnswersOrDeclinesByName:
         assert all(c["posterior"] is None for c in candidates)
         assert unpublished_reasons(payload) == []
 
-    def test_the_ranking_names_the_reading_it_rests_on(self, session):
-        """Two executives lead the department and each is on one path the
-        other is not, so the reading named splits them one to one, by the shape
-        of the declared graph, stamped with the assumption that makes it a test.
-        No edge declares a delay, so every cause is read at the finding's
-        instant and nothing says `read_at`. With no strength, forcing a cause
-        answers nothing: `infer` would decline, so each carries null."""
+    def test_the_walk_is_traced_to_the_executives_and_names_no_reading(self, session):
+        """Both executives leading the department read over their bound, so the
+        walk is traced to them and no reading is left to take (FINDINGS F18):
+        ranked by standing, since no strength gives a posterior, and nothing is
+        screened, so nothing is stamped for it. No edge declares a delay, so
+        every cause is read at the finding's instant and nothing says
+        `read_at`. With no strength, forcing a cause answers nothing: `infer`
+        would decline, so each carries null."""
         leg = api.hypothesize(session, LED).to_dict()["hypothesis"]
-        named = leg["most_discriminating"]
-        assert named["entity"] in LEADERS
-        assert (named["basis"], named["splits"]) == ("structure", [1, 1])
+        walk = leg["walk"]
+        assert (walk["state"], walk["ranked_by"]) == ("traced", "standing")
+        assert {entry["entity"] for entry in walk["frontier"]} == LEADERS
+        assert leg["most_discriminating"] is None
+        assert leg["most_discriminating_reason"]
+        assert "faults_visible_along_channels" not in leg["assumptions"]
         # The type's first declared VALUE: `leads`, a relation, is listed before
         # it, and from engine 0.2.19 a relation is never the reading named
         # (FINDINGS F13). The floor is above that, so it is pinned.
-        assert named["reading"] == f"{named['entity']}.tenure_years"
-        assert "faults_visible_along_channels" in leg["assumptions"]
+        assert {c["evidence_needed"] for c in leg["candidates"]} == {
+            f"{leader}.tenure_years" for leader in LEADERS}
         assert "read_at" not in leg
         assert {c["cause"]: c["path"] for c in leg["candidates"]} == {
             leader: [f"{leader}->{LED}"] for leader in LEADERS}
         assert all(c["do_would_answer"] is None for c in leg["candidates"])
 
-    def test_a_division_names_the_department_with_the_most_executives(self, session):
+    def test_a_division_is_traced_through_its_departments_to_their_executives(
+            self, session):
         """A division's finding can be explained by either department or any
-        executive leading one. Reading the department two executives lead
-        splits the five candidates three to two, the most even split there is."""
+        executive leading one. On thirty captures every one of them reads a
+        finding, so the departments are the trail and the three executives the
+        frontier, and no reading is left to take."""
         leg = api.hypothesize(session, "div-commercial").to_dict()["hypothesis"]
-        named = leg["most_discriminating"]
-        assert (named["entity"], named["basis"], named["splits"]) == (
-            "dept-sales", "structure", [3, 2])
-        assert len(leg["candidates"]) == 5
+        standings = {c["cause"]: c["standing"] for c in leg["candidates"]}
+        assert standings == {"exec-cmo": "frontier", "exec-cro": "frontier",
+                             "exec-vp-sales": "frontier",
+                             "dept-marketing": "trail", "dept-sales": "trail"}
+        assert leg["walk"]["state"] == "traced"
+        assert leg["most_discriminating"] is None
+
+    def test_the_walk_states_by_name(self, session, sensed):
+        """Of the units with a finding, where each walk ends: the two
+        departments the model declares leaders for are traced, and every other
+        unit has no declared cause, so its walk is cut."""
+        units = sorted({f["entity_id"] for f in sensed["findings"]})
+        states = {unit: api.hypothesize(session, unit).to_dict()["hypothesis"][
+            "walk"]["state"] for unit in units}
+        assert sorted(u for u, s in states.items() if s == "traced") == [
+            "dept-marketing", "dept-sales"]
+        assert {s for u, s in states.items()
+                if u not in ("dept-marketing", "dept-sales")} == {"cut"}
 
     def test_the_missing_strength_is_named(self, session):
         """`cpt_missing` is the true answer while nobody has a strength to give,
@@ -378,9 +398,9 @@ class TestGapsLocatesWhatTheModelCannotExplain:
 class TestAConfirmationSaysWhereTheCauseWasRanked:
 
     def test_the_book_reads_the_confirmation_against_the_ranking_before_it(self):
-        """A person confirms the executive the ranking named; the book says where
-        that executive stood and that the named reading settled it -- counts
-        beside the row, never a rate."""
+        """A person confirms the first executive on the walk's frontier; the
+        book says where that executive stood, and that the ranking named no
+        reading -- the walk was traced -- counts beside the row, never a rate."""
         session = _fresh()
         with api.as_of(AT):
             api.check(session)
@@ -391,7 +411,8 @@ class TestAConfirmationSaysWhereTheCauseWasRanked:
             api.attach_stage(session, case_id, "hypothesize", ranking)
             api.attach_stage(session, case_id, "gaps", api.gaps(session))
         leg = ranking.to_dict()["hypothesis"]
-        named = leg["most_discriminating"]["entity"]
+        assert leg["most_discriminating"] is None
+        named = leg["walk"]["frontier"][0]["entity"]
         causes = [c["cause"] for c in leg["candidates"]]
         with api.as_of(AT + timedelta(minutes=5)):
             attached = api.attach_stage(
@@ -406,18 +427,17 @@ class TestAConfirmationSaysWhereTheCauseWasRanked:
         [row] = confirmed["rows"]
         assert (row["case_id"], row["cause"], row["rank"], row["of"],
                 row["named_reading_settled_it"]) == (
-            case_id, named, causes.index(named) + 1, 2, True)
+            case_id, named, causes.index(named) + 1, 2, False)
         assert (confirmed["confirmations"], confirmed["ranked"],
                 confirmed["not_ranked"]) == (1, 1, 0)
-        # Engine 0.2.23 says what that rank rested on: no strength is declared
-        # here, so hop order and then entity id, and the reading was named by
-        # the graph's shape -- a first place here is no posterior's.
-        assert (row["ranked_by"], row["named_by"]) == ("hops", "structure")
+        # Engine 0.2.23 says what that rank rested on, and from 0.2.27 a ranking
+        # with no strength is ordered by standing -- a first place here is no
+        # posterior's -- and named no reading, so nothing compares with the one
+        # the review gave: an unasked question is not a no.
+        assert (row["ranked_by"], row["named_by"]) == ("standing", None)
         assert confirmed["ranked_by_posterior"] == 0
-        # The review settled it on the executive's rating; the ranking named
-        # the same executive's tenure. Not the reading named, and the entity.
         assert (row["settling_reading_was_named"],
-                row["settling_entity_was_named"]) == (False, True)
+                row["settling_entity_was_named"]) == (None, None)
         assert unpublished_reasons(attached) == []
 
 

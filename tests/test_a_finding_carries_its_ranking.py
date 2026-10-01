@@ -5,6 +5,10 @@ this package asks it once per unit and puts the answer beside every finding
 on that unit. It is where to look next, not a verdict: nothing in a ranking
 enters the exit code, so a unit outside the declared causal structure is
 reported as outside it and scored exactly as before.
+
+Beside the causes, where the walk stopped: its state, the frontier where the
+visible fault stops, and the causes still open with what each needs. The
+reading to take first is named only while a cause is open.
 """
 
 from __future__ import annotations
@@ -31,6 +35,14 @@ def result():
                                                      transition=True))
 
 
+@pytest.fixture(scope="module")
+def shipped():
+    """The shipped capture alone: one month, so some checks lack samples."""
+    from operating_health_audit import capture, feeder
+
+    return feeder.run(str(MODEL), [capture.load(CAPTURE)])
+
+
 def _by_unit(result):
     return {f["entity_id"]: f["ranking"] for f in result["findings"]}
 
@@ -49,7 +61,8 @@ def test_a_department_is_explained_by_the_executives_who_lead_it(result):
 def test_a_unit_outside_the_declared_structure_says_so_by_name(result):
     ranking = _by_unit(result)["proc-sales-cycle"]
     assert ranking == {"causes": [], "own_readings": {}, "most_discriminating": None,
-                       "declined": ["not_identifiable"]}
+                       "declined": ["not_identifiable"],
+                       "walk": {"state": "cut", "frontier": [], "open": []}}
 
 
 def test_each_cause_carries_what_its_own_reading_said(result):
@@ -63,14 +76,31 @@ def test_each_cause_carries_what_its_own_reading_said(result):
                                                    "severity": "critical"}
 
 
-def test_the_reading_to_take_first_is_printed_beside_the_causes(result):
+def test_a_traced_unit_says_where_the_fault_stops_and_names_no_reading(result):
+    """Both executives leading sales read over their bound: the walk is traced
+    to them, and there is no reading left to take (FINDINGS F18). Engine 0.2.26
+    named the CRO's tenure here, a reading already taken."""
+    ranking = _by_unit(result)["dept-sales"]
+    assert ranking["walk"]["state"] == "traced"
+    assert [f["entity"] for f in ranking["walk"]["frontier"]] == ["exec-cro",
+                                                                  "exec-vp-sales"]
+    assert all(f["findings"] for f in ranking["walk"]["frontier"])
+    assert ranking["walk"]["open"] == []
+    assert ranking["most_discriminating"] is None
+
+
+def test_the_reading_to_take_first_is_an_open_causes_need(shipped):
     """The engine names the one reading its ranking rests on most. This package
-    kept the causes and dropped it (FINDINGS F15); with no strength declared the
-    causes carry no number, so that reading was the only thing to act on. It is
-    a value a person can read -- a leader's tenure -- never a relation."""
-    named = _by_unit(result)["dept-sales"]["most_discriminating"]
-    assert named == {"entity": "exec-cro", "reading": "exec-cro.tenure_years",
-                     "basis": "structure", "splits": [1, 1]}
+    kept the causes and dropped it (FINDINGS F15). On one capture the marketing
+    executive's rating lacks samples, so the division's walk is partly traced
+    and that rating is the reading it still needs -- a value a person can read,
+    never a relation."""
+    ranking = _by_unit(shipped)["div-commercial"]
+    assert ranking["walk"]["state"] == "partly_traced"
+    assert [entry["entity"] for entry in ranking["walk"]["open"]] == ["exec-cmo"]
+    assert ranking["most_discriminating"] == {
+        "entity": "exec-cmo", "reading": "exec-cmo.performance_rating",
+        "basis": "only_open"}
 
 
 def test_every_finding_on_one_unit_carries_the_same_ranking(result):

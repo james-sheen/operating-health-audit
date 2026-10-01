@@ -350,12 +350,22 @@ def ranking(api: Any, session: Any, entity_id: str, *,
     beside `causes` rather than a third element in each pair, so a reader of the
     pairs reads them as before. `None` means the engine could not say: nothing
     read, or a check on it declined.
+
+    AND WHERE THE WALK STOPPED, under `walk`: its `state`, the `frontier` --
+    where the visible fault stops, each unit with its findings -- and the
+    `open` causes with the readings each still needs, as the engine walked
+    them (engine 0.2.27). A department traced to its executives is answered:
+    the reading to take first is named only while a cause is still open, and
+    `most_discriminating` is `None` otherwise.
     """
     answer = envelope if envelope is not None else api.hypothesize(session, entity_id)
     leg = answer.to_dict().get("hypothesis") or {}
+    walk = leg.get("walk") or {}
     return {
         "causes": [[c.get("cause"), c.get("posterior")]
                    for c in leg.get("candidates") or ()],
+        "walk": {"state": walk.get("state"), "frontier": walk.get("frontier") or [],
+                 "open": walk.get("open") or []},
         "own_readings": {c.get("cause"): c.get("own_reading")
                          for c in leg.get("candidates") or ()},
         "most_discriminating": leg.get("most_discriminating"),

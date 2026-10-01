@@ -6,6 +6,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `detect` prints where each walk stopped, under `walk` beside each ranking's causes: its
+  `state`, the `frontier` where the visible fault stops, and the causes still `open` with
+  what each needs.
+
+### Changed
+
+- The reading to take first is named only while a cause is still open. On the shipped capture
+  the sales department is traced to its two executives and names none; it named a reading
+  already taken (FINDINGS F18).
+- The `detect` extra needs `arbiter-engine` 0.2.27, which walks and orders the causes this way.
+
 ## [0.1.11] — 2026-10-01
 
 ### Added
