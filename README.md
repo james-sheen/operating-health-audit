@@ -38,7 +38,7 @@ from the executives who lead it, into a division from the departments reporting
 to it -- and no strength, so the causes come without numbers, in the order the
 walk stood them. On the shipped capture the sales department is traced to its
 two executives and names no reading; the commercial division is partly traced,
-and the reading named is the marketing executive's rating, which one capture is
+and the reading named is the marketing executive's tenure, which one capture is
 too few samples to judge.
 
 **With `--ledger`, a finding becomes a case.** The file keeps the engine's case

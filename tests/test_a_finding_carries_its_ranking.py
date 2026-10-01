@@ -92,14 +92,15 @@ def test_a_traced_unit_says_where_the_fault_stops_and_names_no_reading(result):
 def test_the_reading_to_take_first_is_an_open_causes_need(shipped):
     """The engine names the one reading its ranking rests on most. This package
     kept the causes and dropped it (FINDINGS F15). On one capture the marketing
-    executive's rating lacks samples, so the division's walk is partly traced
-    and that rating is the reading it still needs -- a value a person can read,
+    executive's readings lack samples, so the division's walk is partly traced,
+    and the reading named is the first value the model declares for an
+    executive of those still owed, the tenure -- a value a person can read,
     never a relation."""
     ranking = _by_unit(shipped)["div-commercial"]
     assert ranking["walk"]["state"] == "partly_traced"
     assert [entry["entity"] for entry in ranking["walk"]["open"]] == ["exec-cmo"]
     assert ranking["most_discriminating"] == {
-        "entity": "exec-cmo", "reading": "exec-cmo.performance_rating",
+        "entity": "exec-cmo", "reading": "exec-cmo.tenure_years",
         "basis": "only_open"}
 
 

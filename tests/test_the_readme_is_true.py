@@ -141,7 +141,7 @@ def _ranking(out, unit):
 def test_the_walks_the_readme_describes_are_the_ones_printed() -> None:
     """The README says the sales department is traced to its two executives and
     names no reading, and the division is partly traced and names the marketing
-    executive's rating, for too few samples."""
+    executive's tenure, for too few samples."""
     _code, out = _run("detect", str(MODEL), str(CAPTURE))
     words = " ".join(README.split())
     sales = _ranking(out, "dept-sales")
@@ -151,13 +151,13 @@ def test_the_walks_the_readme_describes_are_the_ones_printed() -> None:
     division = _ranking(out, "div-commercial")
     assert division["walk"]["state"] == "partly_traced"
     assert division["most_discriminating"] == {
-        "entity": "exec-cmo", "reading": "exec-cmo.performance_rating",
+        "entity": "exec-cmo", "reading": "exec-cmo.tenure_years",
         "basis": "only_open"}
     assert [need["reason"] for entry in division["walk"]["open"]
             for need in entry["needs"]
-            if need["reading"] == "exec-cmo.performance_rating"] == ["insufficient_samples"]
+            if need["reading"] == "exec-cmo.tenure_years"] == ["insufficient_samples"]
     assert "the commercial division is partly traced" in words
-    assert "the marketing executive's rating, which one capture is too few samples" in words
+    assert "the marketing executive's tenure, which one capture is too few samples" in words
 
 
 def test_a_case_closes_after_the_number_of_captures_the_readme_says() -> None:

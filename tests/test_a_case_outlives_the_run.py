@@ -137,16 +137,17 @@ class TestACaseOutlivesTheRun:
 class TestAPersonSaysWhatSettledIt:
 
     def test_the_confirmation_is_read_back_against_the_ranking(self, months, tmp_path):
-        """A division's finding: its walk is partly traced, and the one reading
-        it still needs is the marketing executive's rating. A person reads it,
-        confirms that executive, and says that reading settled it."""
+        """A division's finding: its walk is partly traced, and the reading it
+        names is the marketing executive's tenure, the first value declared of
+        those still owed. A person reads it, confirms that executive, and says
+        that reading settled it."""
         from operating_health_audit import feeder
 
         ledger = str(tmp_path / "ledger.db")
         result = feeder.run(str(MODEL), months[:1], ledger=ledger)
         [finding] = [f for f in result["findings"] if f["entity_id"] == "div-commercial"]
         named = finding["ranking"]["most_discriminating"]["reading"]
-        assert named == "exec-cmo.performance_rating"
+        assert named == "exec-cmo.tenure_years"
         confirmed = feeder.confirm(ledger, finding["case_id"], cause="exec-cmo",
                                    reading=named, basis="the October review")
         assert confirmed["exit_code"] == 0 and confirmed["declined"] == []
@@ -195,7 +196,7 @@ class TestTheVerbs:
         case_id = _case(out, "div-commercial", "status")
         # The reading the division's walk names: the one cause still open.
         code, out = _cli("confirm", ledger, case_id, "--cause", "exec-cmo",
-                         "--reading", "exec-cmo.performance_rating", "--basis", "a review")
+                         "--reading", "exec-cmo.tenure_years", "--basis", "a review")
         assert code == 0 and out["confirmed"]["settling_reading_was_named"] is True
         code, out = _cli("cases", ledger)
         assert code == 0 and out["confirmed"]["confirmations"] == 1
