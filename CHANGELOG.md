@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.12] — 2026-10-01
+
 ### Added
 
 - `detect` prints where each walk stopped, under `walk` beside each ranking's causes: its

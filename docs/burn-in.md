@@ -14,6 +14,8 @@ Re-measured on 2026-09-30 against 0.2.23 and presence-audit 0.2.6: every row is
 unchanged.
 Re-measured on 2026-10-01 against 0.2.25 and presence-audit 0.2.6: every row is
 unchanged.
+Re-measured on 2026-10-01 against 0.2.27 and presence-audit 0.2.6: every row is
+unchanged.
 
 ## The one-line answer
 
