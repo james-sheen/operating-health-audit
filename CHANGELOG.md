@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.11] — 2026-10-01
+
 ### Added
 
 - `detect` prints what each cause's own reading said, under `own_readings` beside each
