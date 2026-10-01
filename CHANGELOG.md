@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.13] — 2026-10-01
+
 ### Changed
 
 - The loop asserts where each walk ends, as the engine's `gaps` now locates it: the support
