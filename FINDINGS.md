@@ -234,6 +234,21 @@ department's walk is traced to its two executives and names none, and `detect`
 prints the walk beside the causes: its state, where the visible fault stops, and
 what is still open.
 
+## In `arbiter-engine` 0.2.29
+
+**F19. `gaps` said nothing about where a walk ends.** On the shipped capture the
+support department's walk is cut -- no executive leads it in the export -- and
+both processes depend on departments that show findings, along a relation this
+model gives no direction. Engine 0.2.29's `gaps` located none of it, and a
+person's confirmation of a cause outside the declared graph was counted
+`not_ranked` and read by nothing. Found by an outside direction document's gate,
+reproduced by running it. From engine 0.2.30 `gaps` locates each: `dept-support`
+with no cause connected on `leads`, both `depends_on` instances as undeclared
+channels, counted by the findings each direction would connect, and a confirmed
+cause outside the graph between it and the finding. The larger count is the
+direction the model's own comment rules out, which is why the engine prefers
+neither. This package prints none of it yet; its loop asserts it.
+
 ## A claim this project made and had to withdraw
 
 **Reading `AXIOM_MINIMUMS` and concluding that nothing can answer from a single

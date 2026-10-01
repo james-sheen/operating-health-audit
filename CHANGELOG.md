@@ -6,6 +6,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- The loop asserts where each walk ends, as the engine's `gaps` now locates it: the support
+  department nobody leads has no cause connected on `leads`, the two processes' dependencies are
+  undeclared channels, and a cause confirmed outside the declared graph is located between the
+  two (FINDINGS F19). Nothing `detect` prints changes.
+- The `detect` extra needs `arbiter-engine` 0.2.30, which says where each walk ends.
+
 ## [0.1.12] — 2026-10-01
 
 ### Added

@@ -368,10 +368,17 @@ class TestGapsLocatesWhatTheModelCannotExplain:
     """`gaps` also reads the other way from the rest of the loop: from what was
     observed back to where the declaration fails to explain it."""
 
-    def test_the_connected_series_locates_nothing_and_names_what_it_cannot_read(
+    def test_the_connected_series_locates_where_its_walks_end_and_nothing_else(
             self, session, sensed):
+        """Only the walk locates anything here (engine 0.2.30): the support
+        department, which no executive leads, and the two processes' dependencies,
+        a relation this model gives no direction."""
         residuals = api.gaps(session).to_dict()["residuals"]
-        assert residuals["hypotheses"] == []
+        assert sorted((h["kind"], h.get("at") or tuple(h["between"]))
+                      for h in residuals["hypotheses"]) == [
+            ("no_cause_connected", "dept-support"),
+            ("undeclared_channel", ("proc-onboarding", "dept-support")),
+            ("undeclared_channel", ("proc-sales-cycle", "dept-sales"))]
         # No balance is declared, and how many executions make a pattern is the
         # model's to say. This model does not say, and no number is chosen.
         assert {(d["reason"], d["location"]) for d in residuals["not_checked"]} == {
@@ -388,11 +395,98 @@ class TestGapsLocatesWhatTheModelCannotExplain:
         session = feeder.open_session(str(MODEL), [shipped])
         api.check(session)
         located = api.gaps(session).to_dict()["residuals"]["hypotheses"]
-        assert {h["at"] for h in located} == set(session.entities)
-        assert len(located) == len(session.entities) == 14
-        assert {h["kind"] for h in located} == {"absent_or_detached"}
+        detached = [h for h in located if h["kind"] == "absent_or_detached"]
+        assert {h["at"] for h in detached} == set(session.entities)
+        assert len(detached) == len(session.entities) == 14
         assert all(h["evidence_needed"] == f"{h['at']}.{h['relation']}"
-                   for h in located)
+                   for h in detached)
+        # With no edge left, every department and division has no cause
+        # connected by the relation the model says brings one (engine 0.2.30).
+        kinds = {unit: entity.type for unit, entity in session.entities.items()}
+        assert {(h["kind"], h["at"], h["relation"]) for h in located
+                if h["kind"] != "absent_or_detached"} == {
+            ("no_cause_connected", unit,
+             {"Department": "leads", "Division": "reports_to"}[kind])
+            for unit, kind in kinds.items() if kind in ("Department", "Division")}
+
+
+@pytest.fixture(scope="module")
+def shipped():
+    """`gaps` on the shipped capture, as the feeder builds its session."""
+    from operating_health_audit import capture, feeder
+
+    session = feeder.open_session(str(MODEL), [capture.load(CAPTURE)])
+    api.check(session)
+    return api.gaps(session).to_dict()["residuals"]
+
+
+class TestGapsSaysWhereEachWalkEnds:
+    """On the shipped capture, `gaps` says where each walk ends (engine 0.2.30):
+    the support department nobody leads, and the two processes' dependencies along
+    a relation this model gives no direction. Nothing at the expansion project,
+    whose division shows nothing."""
+
+    def test_the_department_nobody_leads_has_no_cause_connected(self, shipped):
+        [row] = [h for h in shipped["hypotheses"] if h["kind"] == "no_cause_connected"]
+        assert (row["at"], row["relation"], row["evidence_needed"]) == (
+            "dept-support", "leads", "dept-support.leads")
+
+    def test_both_processes_are_undeclared_channels_on_depends_on(self, shipped):
+        assert [(h["between"], h["relation"]) for h in shipped["hypotheses"]
+                if h["kind"] == "undeclared_channel"] == [
+            (["proc-onboarding", "dept-support"], "depends_on"),
+            (["proc-sales-cycle", "dept-sales"], "depends_on")]
+
+    def test_nothing_at_the_expansion_project_nor_on_the_reversed_edge(self, shipped):
+        """`funds` reaches a division that shows nothing; and the export's
+        `div-commercial reports_to dept-sales` joins two units a causal edge
+        already joins."""
+        assert not [h for h in shipped["hypotheses"] if "proj-expansion" in str(h)]
+        assert not [h for h in shipped["hypotheses"] if h.get("relation") == "reports_to"]
+
+    def test_each_direction_is_counted_and_neither_preferred(self, shipped):
+        """The model's comment says a failure runs from the department to the
+        process: the smaller count. A count says what a direction would connect."""
+        assert shipped["checked"]["undeclared_channels"] == {
+            "depends_on": {"instances": 2, "if_cause_is_source": 4,
+                           "if_cause_is_target": 2}}
+
+    def test_the_walk_states_of_the_eleven_findings(self, shipped):
+        assert shipped["checked"]["walk_states"] == {
+            "traced": 1, "partly_traced": 1, "open": 1, "unexplained": 0, "cut": 6}
+
+    @pytest.mark.parametrize("cause,subject,located", [
+        ("proc-onboarding", "dept-support", True),
+        ("exec-cro", "dept-sales", False)])
+    def test_a_cause_confirmed_outside_the_graph_is_located(
+            self, tmp_path, cause, subject, located):
+        """A confirmation names its cause; one no declared channel connects to
+        the finding is located between the two, and a declared ancestor is not."""
+        from operating_health_audit import capture, feeder
+
+        session = feeder.open_session(str(MODEL), [capture.load(CAPTURE)],
+                                      ledger=str(tmp_path / "book.sqlite"))
+        shipped_at = datetime(2026, 9, 15)
+        with api.as_of(shipped_at):
+            api.check(session)
+            case_id = api.open_case(session, subject, "turnover_pct",
+                                    basis="turnover over its bound"
+                                    ).to_dict()["case"]["case_id"]
+            api.attach_stage(session, case_id, "hypothesize",
+                             api.hypothesize(session, subject))
+        with api.as_of(shipped_at + timedelta(minutes=5)):
+            reading = {"proc-onboarding": "error_rate_pct",
+                       "exec-cro": "direct_reports"}[cause]
+            api.attach_stage(session, case_id, "confirm", reference={
+                "cause": cause, "reading": f"{cause}.{reading}",
+                "basis": "the operations lead, from the monthly review"})
+            residuals = api.gaps(session).to_dict()["residuals"]
+        assert residuals["checked"]["confirmations_read"] == 1
+        rows = [h for h in residuals["hypotheses"]
+                if h["kind"] == "confirmed_outside_graph"]
+        assert [(h["between"], h["basis"]) for h in rows] == (
+            [([cause, subject], "the operations lead, from the monthly review")]
+            if located else [])
 
 
 class TestAConfirmationSaysWhereTheCauseWasRanked:
