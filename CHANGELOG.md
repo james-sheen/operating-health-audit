@@ -6,6 +6,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `detect` prints what each cause's own reading said, under `own_readings` beside each
+  ranking's causes, as the engine computed it -- `None` where it could not say.
+
+### Fixed
+
+- The model's header said one capture produces seven findings; it is eleven -- four critical,
+  four high, three warning.
+- The three `plausible_range:` keys are gone from the model: nothing on this path reads them.
+
 ## [0.1.10] — 2026-09-30
 
 ### Changed

@@ -342,12 +342,22 @@ def ranking(api: Any, session: Any, entity_id: str, *,
     declares no strength, so what a reader got was a list of causes each `None`
     beside `cpt_missing` -- where the engine had said which unit's reading
     splits them, and how evenly. Printed as it arrived, `None` included.
+
+    AND WHAT EACH CAUSE'S OWN READING SAID, under `own_readings`. The engine
+    computes it for every candidate and this dropped it (FINDINGS F16): on the
+    shipped capture `exec-cro` read faulty, critical -- 22 direct reports over a
+    critical 20 -- and the ranking printed `['exec-cro', None]`. A mapping
+    beside `causes` rather than a third element in each pair, so a reader of the
+    pairs reads them as before. `None` means the engine could not say: nothing
+    read, or a check on it declined.
     """
     answer = envelope if envelope is not None else api.hypothesize(session, entity_id)
     leg = answer.to_dict().get("hypothesis") or {}
     return {
         "causes": [[c.get("cause"), c.get("posterior")]
                    for c in leg.get("candidates") or ()],
+        "own_readings": {c.get("cause"): c.get("own_reading")
+                         for c in leg.get("candidates") or ()},
         "most_discriminating": leg.get("most_discriminating"),
         "declined": sorted({d.get("reason") for d in leg.get("not_checked") or ()
                             if d.get("reason")}),

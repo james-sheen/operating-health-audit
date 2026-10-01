@@ -48,8 +48,19 @@ def test_a_department_is_explained_by_the_executives_who_lead_it(result):
 
 def test_a_unit_outside_the_declared_structure_says_so_by_name(result):
     ranking = _by_unit(result)["proc-sales-cycle"]
-    assert ranking == {"causes": [], "most_discriminating": None,
+    assert ranking == {"causes": [], "own_readings": {}, "most_discriminating": None,
                        "declined": ["not_identifiable"]}
+
+
+def test_each_cause_carries_what_its_own_reading_said(result):
+    """The engine computes each candidate's own reading, and this package
+    printed the causes without it (FINDINGS F16): `exec-cro` leads the sales
+    department with 22 direct reports over a critical 20, and the ranking said
+    `None` beside it and named a different reading to take first."""
+    ranking = _by_unit(result)["dept-sales"]
+    assert set(ranking["own_readings"]) == {cause for cause, _ in ranking["causes"]}
+    assert ranking["own_readings"]["exec-cro"] == {"state": "faulty",
+                                                   "severity": "critical"}
 
 
 def test_the_reading_to_take_first_is_printed_beside_the_causes(result):

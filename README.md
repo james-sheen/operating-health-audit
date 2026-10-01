@@ -27,9 +27,10 @@ downstream.
 
 **Beside each finding, what could explain it, and the reading to take first.**
 `detect` asks the engine's `hypothesize` about each unit with a finding and
-prints the answer beside it: the declared causes, each with its posterior, the
-reason the engine declined, and `most_discriminating` -- the one reading whose
-value would most change the ranking. The model declares which way a failure
+prints the answer beside it: the declared causes, each with its posterior, what
+each cause's own reading said under `own_readings` -- `None` where the engine
+could not say -- the reason the engine declined, and `most_discriminating` -- the
+one reading whose value would most change the ranking. The model declares which way a failure
 travels -- into a department from the executives who lead it, into a division
 from the departments reporting to it -- and no strength, so the causes come
 without numbers and the reading is chosen by the shape of the declared graph:

@@ -21,10 +21,13 @@
 # wrong thing until the model was run. It read: every one of the source domain's
 # thirty declarations would decline `insufficient_samples` from a single
 # snapshot. MEASURED on the shipped case study, one capture of fourteen units
-# produces SEVEN findings -- four critical, three warning -- because BOUNDEDNESS
-# evaluates a declared `warning:`/`critical:` against the CURRENT value, and the
-# sample floor governs the arm that needs a history rather than the whole axiom.
-# 103 invariants were checked and 54 declined `insufficient_samples`, not 103.
+# produces ELEVEN findings -- four critical, four high, three warning -- because
+# BOUNDEDNESS evaluates a declared `warning:`/`critical:` against the CURRENT
+# value, and STABILITY reads the four declared bad `status` states the same way.
+# This said SEVEN, four critical and three warning, which stopped being true when
+# the states were fed (FINDINGS F17). The sample floor governs the arm that needs
+# a history rather than the whole axiom: 103 invariants were checked and 54
+# declined `insufficient_samples`, not 103.
 #
 # The lesson is the one this family keeps relearning: a constant read out of a
 # package is not a behaviour, and the run is the only thing that settles which.
@@ -296,6 +299,12 @@ domain:
     Executive:
       # ANSWERS FROM ONE CAPTURE, and it is the finding an operating review is
       # most often actually asked for: a named executive leading nothing.
+      #
+      # NO `plausible_range:` (FINDINGS F17). Three of these indicators declared
+      # one, and nothing on this package's path reads it: the engine exempts the
+      # key by name for a document-ingest pipeline this package does not run. So
+      # it read as a range check that never ran -- and two shipped ratings, 6.2
+      # and 5.1, sit outside the `[0, 5]` it gave `performance_rating`.
       - name: leads
         type: RELATIONSHIP
         axioms: [CONNECTIVITY]
@@ -307,19 +316,16 @@ domain:
         type: NUMERIC
         axioms: [MONOTONICITY]
         window: 3650d
-        plausible_range: [0, 50]
       - name: direct_reports
         type: NUMERIC
         axioms: [BOUNDEDNESS]
         window: 3650d
         warning: 12
         critical: 20
-        plausible_range: [0, 200]
       - name: performance_rating
         type: NUMERIC
         axioms: [HOMEOSTASIS, STABILITY]
         window: 3650d
-        plausible_range: [0, 5]
 
     Project:
       - name: funds

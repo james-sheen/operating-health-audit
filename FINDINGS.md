@@ -199,6 +199,28 @@ from. `detect` prints the reading, `--ledger` keeps the cases, `confirm` and
 `cases` record and read them, and the README says which parts run only in the
 loop test.
 
+## In this package, at 0.1.10
+
+**F16. `detect` printed each cause without its own reading.** The engine computes,
+for every candidate a ranking holds, what the last check said about it, and
+`detect` kept the cause and its posterior and dropped that. On the shipped capture
+`exec-cro` reads faulty, critical -- 22 direct reports over a critical 20 -- and
+the sales department's ranking printed `['exec-cro', None]` and named a different
+reading to take first. Found by an outside direction document, read and not run;
+reproduced by running it with the engine's raw answer captured beside the
+printed one. `own_readings` now carries each cause's reading beside the pairs.
+
+**F17. The model's record of itself was two releases stale.** Its header said one
+capture produces seven findings, four critical and three warning; since the
+`status` states were fed it is eleven, four of them `high`. And three executive
+indicators declared `plausible_range:`, which nothing on this package's path
+reads -- the engine exempts the key by name for a document-ingest pipeline this
+package does not run -- so it read as a range check that never ran, while two
+shipped ratings, 6.2 and 5.1, sit outside the `[0, 5]` it gave
+`performance_rating`. The header now says eleven, and the keys are gone. The two
+ratings stay as the case study ships them; whether the scale is five is a
+question for whoever states it.
+
 ## A claim this project made and had to withdraw
 
 **Reading `AXIOM_MINIMUMS` and concluding that nothing can answer from a single
