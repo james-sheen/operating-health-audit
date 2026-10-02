@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.14] — 2026-10-02
+
 ### Changed
 
 - `confirm` and `cases` carry where a confirmed cause stood on the walk the case kept, as the
