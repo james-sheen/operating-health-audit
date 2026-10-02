@@ -357,6 +357,12 @@ def ranking(api: Any, session: Any, entity_id: str, *,
     them (engine 0.2.27). A department traced to its executives is answered:
     the reading to take first is named only while a cause is still open, and
     `most_discriminating` is `None` otherwise.
+
+    AND THE FIRST RUNG DOWN, on each frontier entry as the engine gives it
+    (engine 0.2.32): what it `explains` below it -- the units downstream along
+    the declared channels that show a finding now, with `findings_explained` --
+    and the `actions` that apply to it. `exec-cro`, at the frontier of the sales
+    department's walk, explains the department, its division and its process.
     """
     answer = envelope if envelope is not None else api.hypothesize(session, entity_id)
     leg = answer.to_dict().get("hypothesis") or {}
@@ -372,6 +378,28 @@ def ranking(api: Any, session: Any, entity_id: str, *,
         "declined": sorted({d.get("reason") for d in leg.get("not_checked") or ()
                             if d.get("reason")}),
     }
+
+
+#: The four kinds `gaps` locates from the walk up from each finding (engine 0.2.30).
+WALK_KINDS = ("no_cause_connected", "unexplained_finding", "undeclared_channel",
+              "confirmed_outside_graph")
+
+
+def walks_end(api: Any, session: Any) -> Mapping[str, Any]:
+    """Where each walk up from a finding ends, as the engine's `gaps` locates it:
+    a unit no declared cause reaches, a finding every connected cause screened, a
+    relation fed with no causal direction, and a cause confirmed outside the
+    declared graph -- with the walk states, and what each undeclared relation
+    would connect each way. Engine 0.2.30 located all of it and `detect` printed
+    none (FINDINGS F21). Beside the findings, like the rankings: it says where
+    the model ends, not what is wrong with the organisation, and nothing here
+    enters the exit code."""
+    residuals = api.gaps(session).to_dict().get("residuals") or {}
+    checked = residuals.get("checked") or {}
+    return {"located": [row for row in residuals.get("hypotheses") or ()
+                        if row.get("kind") in WALK_KINDS],
+            "walk_states": checked.get("walk_states") or {},
+            "undeclared_channels": checked.get("undeclared_channels") or {}}
 
 
 def run(model_path: str, captures: Sequence[Any], *,
@@ -439,6 +467,7 @@ def run(model_path: str, captures: Sequence[Any], *,
                 rankings[unit] = ranking(api, session, unit, envelope=answers[unit])
         cases = (_cases(api, session, payload.get("findings", []), answers)
                  if ledger else None)
+        ended = walks_end(api, session)
 
     dropped = session.dropped_declarations()
     kinds = _kinds(payload, dropped)
@@ -459,6 +488,7 @@ def run(model_path: str, captures: Sequence[Any], *,
         "series_fed": len(series),
         "timing": timing(captures, interval_seconds=interval_seconds),
         "findings": findings,
+        "where_walks_end": ended,
         "not_checked": payload.get("not_checked", []),
         "checked": payload.get("checked", {}),
         "engine": payload.get("meta", {}),

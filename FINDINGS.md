@@ -262,6 +262,25 @@ case keeps each cause's standing and the walk's state and frontier, and the row 
 on a session holding only the ledger, as `confirm` runs. `cases` passed the engine's
 summary through by name and dropped the new `reopened`; it carries it now.
 
+## In `arbiter-engine` 0.2.31
+
+**F21. The model could not say which way `depends_on` carries a failure, and `detect`
+printed none of where a walk ends.** Its comment said it in words: a failure travels from
+the department to the process, against the edge the export carries. The engine read a
+causal rule's source as its cause, so declaring it would have blamed the process, and the
+processes' walks were cut. Found by an outside direction document's gate, reproduced by
+running it. From engine 0.2.32 a rule names its cause's end, and the model declares
+`depends_on` with `cause: target`: `proc-onboarding` walks to `dept-support`, where no
+executive leads it, and `exec-cro` explains the sales department, its division and its
+process. `gaps` had located where each walk ends since engine 0.2.30, and `detect` now
+prints it.
+
+**F22. A warning was left out of the evidence.** A case here opens on a warning, and the
+engine's own floor counts only `high` and `critical`, so `exec-vp-sales`, over its warning
+line, read `deviating` beside `exec-cro`'s `faulty`, and every ranking carried
+`evidence_severity_not_declared`. The model now says which severities count:
+everything at or above a warning, as its case criterion counts.
+
 ## A claim this project made and had to withdraw
 
 **Reading `AXIOM_MINIMUMS` and concluding that nothing can answer from a single

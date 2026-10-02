@@ -158,6 +158,24 @@ def test_the_walks_the_readme_describes_are_the_ones_printed() -> None:
             if need["reading"] == "exec-cmo.tenure_years"] == ["insufficient_samples"]
     assert "the commercial division is partly traced" in words
     assert "the marketing executive's tenure, which one capture is too few samples" in words
+    # Engine 0.2.32: what the chief revenue officer explains below the frontier.
+    cro = next(row for row in sales["walk"]["frontier"] if row["entity"] == "exec-cro")
+    assert [r["entity"] for r in cro["explains"]] == [
+        "dept-sales", "div-commercial", "proc-sales-cycle"]
+    assert ("the chief revenue officer explaining the department, its division and "
+            "its sales process") in words
+
+
+def test_where_the_walks_end_is_what_the_readme_says() -> None:
+    """The README says `detect` prints where each walk ends, and on the shipped
+    capture names the support department, which no executive leads."""
+    _code, out = _run("detect", str(MODEL), str(CAPTURE))
+    words = " ".join(README.split())
+    assert [(row["kind"], row["at"], row["relation"])
+            for row in out["where_walks_end"]["located"]] == [
+        ("no_cause_connected", "dept-support", "leads")]
+    assert "Under `where_walks_end`, `detect` prints where each walk ends" in words
+    assert "the support department, which no executive leads" in words
 
 
 def test_a_case_closes_after_the_number_of_captures_the_readme_says() -> None:

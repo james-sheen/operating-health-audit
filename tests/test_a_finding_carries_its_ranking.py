@@ -59,7 +59,10 @@ def test_a_department_is_explained_by_the_executives_who_lead_it(result):
 
 
 def test_a_unit_outside_the_declared_structure_says_so_by_name(result):
-    ranking = _by_unit(result)["proc-sales-cycle"]
+    """A project funds a division, and nothing here says which way a funding
+    failure runs. (The processes were this example until the model declared
+    `depends_on` with the cause at the department, engine 0.2.32.)"""
+    ranking = _by_unit(result)["proj-expansion"]
     assert ranking == {"causes": [], "own_readings": {}, "most_discriminating": None,
                        "declined": ["not_identifiable"],
                        "walk": {"state": "cut", "frontier": [], "open": []}}

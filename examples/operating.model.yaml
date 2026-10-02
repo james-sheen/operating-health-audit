@@ -99,10 +99,19 @@ domain:
   axiom_parameters:
     homeostasis_baseline_days: 3650
 
+  # WHICH SEVERITIES COUNT AS A FAULT TRAVELLING. A case here opens on a
+  # warning, and the engine's own floor counts only `high` and `critical`: an
+  # executive over a warning line read `deviating` beside one over a critical
+  # line read `faulty`, and every ranking was stamped
+  # `evidence_severity_not_declared`. Everything at or above a warning counts,
+  # as the case criterion below counts it.
+  causal:
+    evidence_severity: [warning, low, medium, high, critical]
+
   # WHICH WAY A FAILURE TRAVELS, declared where the structure says so and nowhere
   # else. The engine reads a causal rule as the direction of the edge it names --
-  # the edge's source is the cause -- so only a relation whose exported edge
-  # already runs from the failing unit to the one it reaches can carry one:
+  # the edge's source is the cause -- unless the rule names the other end with
+  # `cause: target`:
   #
   # - `leads`, executive to department. A department is run by the executive who
   #   leads it; a failure of leadership reaches the department it leads, and the
@@ -111,10 +120,15 @@ domain:
   #   departments' figures, so a department that fails takes its division's with
   #   it.
   #
-  # NOT `depends_on`: a process depends on a department, and a failure travels
-  # from the department to the process -- against the edge. Declaring it would
-  # say the process fails the department. NOT `funds`: nothing here says which
-  # way a funding failure runs, and a direction nobody can state is not declared.
+  # - `depends_on`, process to department, with the cause at the TARGET. A
+  #   process depends on a department, and a failure travels from the department
+  #   to the process -- against the edge the export carries. `cause: target`
+  #   says so (engine 0.2.32); `edge_direction: causal` would say the process
+  #   fails the department. An engine before 0.2.32 reads the rule as no causal
+  #   direction, so the processes' walks stop where they did.
+  #
+  # NOT `funds`: nothing here says which way a funding failure runs, and a
+  # direction nobody can state is not declared.
   #
   # NO STRENGTHS. Nothing gives one: this model is invented, and a weight is a
   # measured fraction of failures that travel. Without one `hypothesize` answers
@@ -124,6 +138,10 @@ domain:
       source_type: Executive
       target_type: Department
       edge_direction: causal
+    - type: depends_on
+      source_type: Process
+      target_type: Department
+      cause: target
     - type: reports_to
       source_type: Department
       target_type: Division

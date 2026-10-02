@@ -145,15 +145,16 @@ class TestEveryStageAnswersOrDeclinesByName:
 
     def test_the_walk_states_by_name(self, session, sensed):
         """Of the units with a finding, where each walk ends: the two
-        departments the model declares leaders for are traced, and every other
-        unit has no declared cause, so its walk is cut."""
+        departments the model declares leaders for are traced, and so are the
+        two processes, through the departments they depend on (engine 0.2.32,
+        `depends_on` with the cause at the department). Every other unit has no
+        declared cause, so its walk is cut."""
         units = sorted({f["entity_id"] for f in sensed["findings"]})
         states = {unit: api.hypothesize(session, unit).to_dict()["hypothesis"][
             "walk"]["state"] for unit in units}
-        assert sorted(u for u, s in states.items() if s == "traced") == [
-            "dept-marketing", "dept-sales"]
-        assert {s for u, s in states.items()
-                if u not in ("dept-marketing", "dept-sales")} == {"cut"}
+        traced = ["dept-marketing", "dept-sales", "proc-onboarding", "proc-sales-cycle"]
+        assert sorted(u for u, s in states.items() if s == "traced") == traced
+        assert {s for u, s in states.items() if u not in traced} == {"cut"}
 
     def test_the_missing_strength_is_named(self, session):
         """`cpt_missing` is the true answer while nobody has a strength to give,
@@ -371,14 +372,13 @@ class TestGapsLocatesWhatTheModelCannotExplain:
     def test_the_connected_series_locates_where_its_walks_end_and_nothing_else(
             self, session, sensed):
         """Only the walk locates anything here (engine 0.2.30): the support
-        department, which no executive leads, and the two processes' dependencies,
-        a relation this model gives no direction."""
+        department, which no executive leads. The two processes' dependencies
+        were located as undeclared channels until the model declared `depends_on`
+        with the cause at the department (engine 0.2.32)."""
         residuals = api.gaps(session).to_dict()["residuals"]
         assert sorted((h["kind"], h.get("at") or tuple(h["between"]))
                       for h in residuals["hypotheses"]) == [
-            ("no_cause_connected", "dept-support"),
-            ("undeclared_channel", ("proc-onboarding", "dept-support")),
-            ("undeclared_channel", ("proc-sales-cycle", "dept-sales"))]
+            ("no_cause_connected", "dept-support")]
         # No balance is declared, and how many executions make a pattern is the
         # model's to say. This model does not say, and no number is chosen.
         assert {(d["reason"], d["location"]) for d in residuals["not_checked"]} == {
@@ -400,14 +400,17 @@ class TestGapsLocatesWhatTheModelCannotExplain:
         assert len(detached) == len(session.entities) == 14
         assert all(h["evidence_needed"] == f"{h['at']}.{h['relation']}"
                    for h in detached)
-        # With no edge left, every department and division has no cause
-        # connected by the relation the model says brings one (engine 0.2.30).
+        # With no edge left, every department, division and process has no
+        # cause connected by the relation the model says brings one (engine
+        # 0.2.30; a process through `depends_on` from 0.2.32, its cause at the
+        # department it depends on).
         kinds = {unit: entity.type for unit, entity in session.entities.items()}
+        relation = {"Department": "leads", "Division": "reports_to",
+                    "Process": "depends_on"}
         assert {(h["kind"], h["at"], h["relation"]) for h in located
                 if h["kind"] != "absent_or_detached"} == {
-            ("no_cause_connected", unit,
-             {"Department": "leads", "Division": "reports_to"}[kind])
-            for unit, kind in kinds.items() if kind in ("Department", "Division")}
+            ("no_cause_connected", unit, relation[kind])
+            for unit, kind in kinds.items() if kind in relation}
 
 
 @pytest.fixture(scope="module")
@@ -431,11 +434,12 @@ class TestGapsSaysWhereEachWalkEnds:
         assert (row["at"], row["relation"], row["evidence_needed"]) == (
             "dept-support", "leads", "dept-support.leads")
 
-    def test_both_processes_are_undeclared_channels_on_depends_on(self, shipped):
-        assert [(h["between"], h["relation"]) for h in shipped["hypotheses"]
-                if h["kind"] == "undeclared_channel"] == [
-            (["proc-onboarding", "dept-support"], "depends_on"),
-            (["proc-sales-cycle", "dept-sales"], "depends_on")]
+    def test_the_onboarding_process_walks_to_the_department_nobody_leads(self, shipped):
+        """The step-5 gate's first leg (engine 0.2.32). With `depends_on`
+        declared at the department, the process walks to `dept-support`, and the
+        walk ends there: no executive leads it."""
+        [row] = [h for h in shipped["hypotheses"] if h["kind"] == "no_cause_connected"]
+        assert row["subjects"] == ["dept-support", "proc-onboarding"]
 
     def test_nothing_at_the_expansion_project_nor_on_the_reversed_edge(self, shipped):
         """`funds` reaches a division that shows nothing; and the export's
@@ -444,16 +448,19 @@ class TestGapsSaysWhereEachWalkEnds:
         assert not [h for h in shipped["hypotheses"] if "proj-expansion" in str(h)]
         assert not [h for h in shipped["hypotheses"] if h.get("relation") == "reports_to"]
 
-    def test_each_direction_is_counted_and_neither_preferred(self, shipped):
-        """The model's comment says a failure runs from the department to the
-        process: the smaller count. A count says what a direction would connect."""
-        assert shipped["checked"]["undeclared_channels"] == {
-            "depends_on": {"instances": 2, "if_cause_is_source": 4,
-                           "if_cause_is_target": 2}}
+    def test_no_channel_is_left_undeclared(self, shipped):
+        """Step 3 counted `depends_on` both ways and preferred neither: 4 findings
+        with the cause at the process, 2 at the department. The model declares
+        the direction its comment states, the department, and no relation
+        between two findings is left without one."""
+        assert shipped["checked"]["undeclared_channels"] == {}
+        assert not [h for h in shipped["hypotheses"] if h["kind"] == "undeclared_channel"]
 
     def test_the_walk_states_of_the_eleven_findings(self, shipped):
+        """Both processes traced since `depends_on` carries the department's
+        failure to them (engine 0.2.32): two fewer walks are cut."""
         assert shipped["checked"]["walk_states"] == {
-            "traced": 1, "partly_traced": 1, "open": 1, "unexplained": 0, "cut": 6}
+            "traced": 3, "partly_traced": 1, "open": 1, "unexplained": 0, "cut": 4}
 
     @pytest.mark.parametrize("cause,subject,located", [
         ("proc-onboarding", "dept-support", True),
@@ -487,6 +494,83 @@ class TestGapsSaysWhereEachWalkEnds:
         assert [(h["between"], h["basis"]) for h in rows] == (
             [([cause, subject], "the operations lead, from the monthly review")]
             if located else [])
+
+
+class TestTheFirstRungDown:
+    """Each place a walk stops says what it explains below it, and what could act
+    on it (engine 0.2.32), on the shipped capture as the feeder builds it."""
+
+    def _leg(self, unit):
+        from operating_health_audit import capture, feeder
+
+        session = feeder.open_session(str(MODEL), [capture.load(CAPTURE)])
+        api.check(session)
+        return api.hypothesize(session, unit).to_dict()["hypothesis"]
+
+    def test_the_cro_explains_the_department_its_division_and_its_process(self):
+        """The step-5 gate's second leg: the process is reached only because
+        `depends_on` carries the department's failure to it."""
+        frontier = {row["entity"]: row for row in self._leg(LED)["walk"]["frontier"]}
+        row = frontier["exec-cro"]
+        assert [r["entity"] for r in row["explains"]] == [
+            "dept-sales", "div-commercial", "proc-sales-cycle"]
+        assert row["findings_explained"] == 4
+        assert row["actions"] == [], "no lever on an executive is declared"
+
+    def test_the_department_nobody_leads_is_where_a_hire_would_act(self):
+        [row] = self._leg("proc-onboarding")["walk"]["frontier"]
+        assert (row["entity"], [r["entity"] for r in row["explains"]], row["actions"]) == (
+            "dept-support", ["proc-onboarding"], ["add_headcount"])
+
+    def test_a_warning_counts_as_a_fault_travelling(self):
+        """The model says which severities count (`causal.evidence_severity`), so
+        the executive over a warning line reads faulty beside the one over a
+        critical line, and no ranking is stamped as resting on the engine's floor."""
+        leg = self._leg(LED)
+        assert {c["cause"]: c["evidence"]["state"] for c in leg["candidates"]} == {
+            "exec-cro": "faulty", "exec-vp-sales": "faulty"}
+        assert "evidence_severity_not_declared" not in (leg.get("assumptions") or [])
+
+    def test_a_plan_that_hires_into_support_names_the_onboarding_case(self, tmp_path):
+        """Once `dept-support` is on the frontier of the onboarding process's open
+        case, every plan adding people to it names that case, and no plan that
+        leaves it alone does."""
+        from operating_health_audit import feeder
+
+        session = feeder.open_session(str(MODEL), _series(),
+                                      ledger=str(tmp_path / "book.sqlite"))
+        with api.as_of(AT):
+            api.check(session)
+            case_id = api.open_case(session, "proc-onboarding", "error_rate_pct",
+                                    basis="an error rate over its bound"
+                                    ).to_dict()["case"]["case_id"]
+            api.attach_stage(session, case_id, "hypothesize",
+                             api.hypothesize(session, "proc-onboarding"))
+            candidates = api.plan(session).to_dict()["plan"]["candidates"]
+        hires = [c for c in candidates if any(a["entity_id"] == "dept-support"
+                                              for a in c["actions"])]
+        others = [c for c in candidates if c not in hires]
+        assert hires and others
+        assert all(c["on_frontier_of"] == [case_id] for c in hires)
+        assert all(c["on_frontier_of"] == [] for c in others)
+
+
+class TestDetectSaysWhereEachWalkEnds:
+    """`detect` prints what `gaps` locates from the walk (engine 0.2.30), which it
+    left unprinted until 0.1.15 (FINDINGS F21), and the first rung down beside
+    each ranking."""
+
+    def test_the_support_department_is_where_a_walk_ends(self):
+        from operating_health_audit import capture, feeder
+
+        out = feeder.run(str(MODEL), [capture.load(CAPTURE)])
+        ended = out["where_walks_end"]
+        assert [(row["kind"], row["at"], row["relation"]) for row in ended["located"]] == [
+            ("no_cause_connected", "dept-support", "leads")]
+        assert ended["walk_states"]["cut"] == 4
+        assert ended["undeclared_channels"] == {}
+        [ranking] = [f["ranking"] for f in out["findings"] if f["entity_id"] == "proc-onboarding"][:1]
+        assert [row["actions"] for row in ranking["walk"]["frontier"]] == [["add_headcount"]]
 
 
 class TestAConfirmationSaysWhereTheCauseWasRanked:

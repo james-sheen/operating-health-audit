@@ -31,15 +31,20 @@ with a finding and prints the answer beside it: the declared causes, each with
 its posterior, what each cause's own reading said under `own_readings` -- `None`
 where the engine could not say -- the reason the engine declined, the `walk`, and
 `most_discriminating`. The walk gives its `state`, the `frontier` where the
-visible fault stops, and the causes still `open` with what each needs; the
+visible fault stops -- each unit with what it explains below it and the actions
+that apply to it -- and the causes still `open` with what each needs; the
 reading to take first is one an open cause still needs, and `None` when nothing
 is open. The model declares which way a failure travels -- into a department
 from the executives who lead it, into a division from the departments reporting
-to it -- and no strength, so the causes come without numbers, in the order the
-walk stood them. On the shipped capture the sales department is traced to its
-two executives and names no reading; the commercial division is partly traced,
-and the reading named is the marketing executive's tenure, which one capture is
-too few samples to judge.
+to it, into a process from the department it depends on -- and no strength, so
+the causes come without numbers, in the order the walk stood them. On the shipped
+capture the sales department is traced to its two executives and names no
+reading, the chief revenue officer explaining the department, its division and
+its sales process; the commercial division is partly traced, and the reading named
+is the marketing executive's tenure, which one capture is too few samples to judge.
+Under `where_walks_end`, `detect` prints where each walk ends, as the engine's
+`gaps` locates it: on the shipped capture, the support department, which no
+executive leads.
 
 **With `--ledger`, a finding becomes a case.** The file keeps the engine's case
 book. Each finding opens a case on its unit and indicator unless one is open,

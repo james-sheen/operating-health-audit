@@ -6,6 +6,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- The model declares `depends_on` with the cause at the department (`cause: target`), as its
+  comment had said in words, and which severities count as a fault travelling (warning and
+  above). Both processes are now traced to their departments, and no relation between two
+  findings is left without a direction (FINDINGS F21, F22).
+- `detect` prints `where_walks_end`, what `gaps` locates from the walk, and each ranking's
+  frontier carries what it explains below it and the actions that apply.
+- The `detect` extra needs `arbiter-engine` 0.2.32, which reads the new key.
+
 ## [0.1.14] — 2026-10-02
 
 ### Changed
