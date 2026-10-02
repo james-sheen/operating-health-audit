@@ -6,6 +6,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- `confirm` and `cases` carry where a confirmed cause stood on the walk the case kept, as the
+  engine now reads it: the executive confirmed on the sales department stood at the frontier of
+  a traced walk, and a process confirmed on the department nobody leads is not connected
+  (FINDINGS F20). `cases` also carries how many cases were reopened.
+- The `detect` extra needs `arbiter-engine` 0.2.31, which keeps the walk on a case.
+
 ## [0.1.13] — 2026-10-01
 
 ### Changed

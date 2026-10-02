@@ -198,6 +198,10 @@ class TestTheVerbs:
         code, out = _cli("confirm", ledger, case_id, "--cause", "exec-cmo",
                          "--reading", "exec-cmo.tenure_years", "--basis", "a review")
         assert code == 0 and out["confirmed"]["settling_reading_was_named"] is True
+        # Engine 0.2.31: where the cause stood on the walk the case kept.
+        assert (out["confirmed"]["standing"], out["confirmed"]["walks_before"]) == (
+            "open", 1)
         code, out = _cli("cases", ledger)
         assert code == 0 and out["confirmed"]["confirmations"] == 1
         assert out["opened"] == out["open"] > 0
+        assert out["reopened"] == 0

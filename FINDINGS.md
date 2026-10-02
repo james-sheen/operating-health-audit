@@ -249,6 +249,19 @@ cause outside the graph between it and the finding. The larger count is the
 direction the model's own comment rules out, which is why the engine prefers
 neither. This package prints none of it yet; its loop asserts it.
 
+## In `arbiter-engine` 0.2.30
+
+**F20. A confirmation was read against a rank, and a case kept nothing of the walk.**
+On the shipped capture the walk up from `dept-sales` is traced, with `exec-cro` and
+`exec-vp-sales` at its frontier. A case kept each cause and its posterior, nothing of
+the walk, and a confirmation of `exec-cro` read *rank 1 of 2*: a spelling order, since
+this model declares no strength, and nothing said where the executive stood. Found by
+an outside direction document's gate, reproduced by running it. From engine 0.2.31 the
+case keeps each cause's standing and the walk's state and frontier, and the row reads
+`frontier` on a `traced` walk, with the confirmation's basis and one ranking before it,
+on a session holding only the ledger, as `confirm` runs. `cases` passed the engine's
+summary through by name and dropped the new `reopened`; it carries it now.
+
 ## A claim this project made and had to withdraw
 
 **Reading `AXIOM_MINIMUMS` and concluding that nothing can answer from a single

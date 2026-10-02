@@ -585,4 +585,4 @@ def book(ledger: str) -> Mapping[str, Any]:
     leg = _book(api, api.EngineSession(ledger=_existing_ledger(ledger)))
     return {"exit_code": x.CLEAN,
             **{key: leg.get(key) for key in ("opened", "open", "resolved",
-                                             "confirmed", "cases")}}
+                                             "reopened", "confirmed", "cases")}}

@@ -93,7 +93,13 @@ dependencies = ["presence-audit>=0.1.13,<0.3"]
 # dependencies with what each direction would connect, the walk states, and a cause
 # confirmed outside the declared graph -- all from 0.2.30. Measured against 0.2.29:
 # exactly those eight tests fail, and the other 261 pass there.
-detect = ["arbiter-engine>=0.2.30,<0.3"]
+#
+# THE FLOOR IS 0.2.31, FORCED BY A FAILING CONTROL A TENTH TIME. The loop reads
+# where a confirmed cause stood on the walk the case kept -- the executive at the
+# frontier of a traced walk, the process outside a cut one -- and `cases` passes
+# the reopened count through, all from 0.2.31. Measured against 0.2.30: exactly
+# those three tests fail, and the other 268 pass there.
+detect = ["arbiter-engine>=0.2.31,<0.3"]
 
 [project.urls]
 Homepage = "https://github.com/james-sheen/operating-health-audit"

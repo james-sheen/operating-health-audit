@@ -535,6 +535,53 @@ class TestAConfirmationSaysWhereTheCauseWasRanked:
         assert unpublished_reasons(attached) == []
 
 
+class TestAConfirmationSaysWhereTheCauseStood:
+    """On the shipped capture (engine 0.2.31) a case keeps the walk, and the book
+    reads a confirmation back against it: where the cause stood, on what walk,
+    on whose word, and after how many rankings. Confirmed through `confirm`, on
+    a session holding the ledger and nothing else, as a person would."""
+
+    BASIS = "the operations lead, from the monthly review"
+
+    def _confirmed(self, tmp_path, subject, cause, reading):
+        from operating_health_audit import capture, feeder
+
+        ledger = str(tmp_path / "book.sqlite")
+        session = feeder.open_session(str(MODEL), [capture.load(CAPTURE)],
+                                      ledger=ledger)
+        shipped_at = datetime(2026, 9, 15)
+        with api.as_of(shipped_at):
+            api.check(session)
+            case_id = api.open_case(session, subject, "turnover_pct",
+                                    basis="turnover over its bound"
+                                    ).to_dict()["case"]["case_id"]
+            api.attach_stage(session, case_id, "hypothesize",
+                             api.hypothesize(session, subject))
+        with api.as_of(shipped_at + timedelta(minutes=5)):
+            out = feeder.confirm(ledger, case_id, cause=cause,
+                                 reading=f"{cause}.{reading}", basis=self.BASIS)
+        return out["confirmed"], feeder.book(ledger)
+
+    def test_the_cro_confirmed_on_sales_stood_at_the_frontier_of_a_traced_walk(
+            self, tmp_path):
+        row, book = self._confirmed(tmp_path, LED, "exec-cro", "direct_reports")
+        assert (row["standing"], row["walk_state"], row["basis"],
+                row["walks_before"]) == ("frontier", "traced", self.BASIS, 1)
+        assert (book["confirmed"]["by_standing"]["frontier"],
+                book["confirmed"]["confirmed_after_screened"]) == (1, 0)
+        assert book["reopened"] == 0
+
+    def test_a_process_confirmed_on_the_department_nobody_leads_is_not_connected(
+            self, tmp_path):
+        """Its walk is cut, so nothing ranked it -- and nothing declared reaches it
+        past the bound either: the process is not connected at all."""
+        row, book = self._confirmed(tmp_path, "dept-support", "proc-onboarding",
+                                    "error_rate_pct")
+        assert (row["standing"], row["walk_state"], row["rank"]) == (
+            "not_connected", "cut", None)
+        assert book["confirmed"]["by_standing"]["not_connected"] == 1
+
+
 def _planned(tmp_path, **planning):
     """`plan` over the loop's own series, on a copy of the model whose planning
     block is changed by `planning` -- the shipped file is never written."""
