@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.15] — 2026-10-02
+
 ### Changed
 
 - The model declares `depends_on` with the cause at the department (`cause: target`), as its

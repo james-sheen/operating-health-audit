@@ -121,7 +121,7 @@ the audit exists to be able to give.
 ## Quick start
 
 ```bash
-git clone --branch v0.1.14 https://github.com/james-sheen/operating-health-audit
+git clone --branch v0.1.15 https://github.com/james-sheen/operating-health-audit
 cd operating-health-audit
 pip install '.[detect]'     # not on PyPI: this installs the release you cloned
 
